@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -6,8 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_pos_printer_platform/esc_pos_utils_platform/esc_pos_utils_platform.dart';
 import 'package:flutter_pos_printer_platform/flutter_pos_printer_platform.dart';
 import 'package:image/image.dart' as img;
-
-
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 class FlutterPRint extends StatefulWidget {
   const FlutterPRint({Key? key}) : super(key: key);
 
@@ -28,6 +29,7 @@ class _FlutterPRintState extends State<FlutterPRint> {
   StreamSubscription<USBStatus>? _subscriptionUsbStatus;
 
   BTStatus _currentStatus = BTStatus.none;
+
   // _currentUsbStatus is only supports on Android
   // ignore: unused_field
   USBStatus _currentUsbStatus = USBStatus.none;
@@ -46,7 +48,8 @@ class _FlutterPRintState extends State<FlutterPRint> {
     _scan();
 
     // subscription to listen change status of bluetooth connection
-    _subscriptionBtStatus = PrinterManager.instance.stateBluetooth.listen((status) {
+    _subscriptionBtStatus =
+        PrinterManager.instance.stateBluetooth.listen((status) {
       log(' ----------------- status bt $status ------------------ ');
       _currentStatus = status;
       if (status == BTStatus.connected) {
@@ -62,11 +65,13 @@ class _FlutterPRintState extends State<FlutterPRint> {
       if (status == BTStatus.connected && pendingTask != null) {
         if (Platform.isAndroid) {
           Future.delayed(const Duration(milliseconds: 1000), () {
-            PrinterManager.instance.send(type: PrinterType.bluetooth, bytes: pendingTask!);
+            PrinterManager.instance
+                .send(type: PrinterType.bluetooth, bytes: pendingTask!);
             pendingTask = null;
           });
         } else if (Platform.isIOS) {
-          PrinterManager.instance.send(type: PrinterType.bluetooth, bytes: pendingTask!);
+          PrinterManager.instance
+              .send(type: PrinterType.bluetooth, bytes: pendingTask!);
           pendingTask = null;
         }
       }
@@ -78,7 +83,8 @@ class _FlutterPRintState extends State<FlutterPRint> {
       if (Platform.isAndroid) {
         if (status == USBStatus.connected && pendingTask != null) {
           Future.delayed(const Duration(milliseconds: 1000), () {
-            PrinterManager.instance.send(type: PrinterType.usb, bytes: pendingTask!);
+            PrinterManager.instance
+                .send(type: PrinterType.usb, bytes: pendingTask!);
             pendingTask = null;
           });
         }
@@ -99,7 +105,9 @@ class _FlutterPRintState extends State<FlutterPRint> {
   // method to scan devices according PrinterType
   void _scan() {
     devices.clear();
-    _subscription = printerManager.discovery(type: defaultPrinterType, isBle: _isBle).listen((device) {
+    _subscription = printerManager
+        .discovery(type: defaultPrinterType, isBle: _isBle)
+        .listen((device) {
       devices.add(BluetoothPrinter(
         deviceName: device.name,
         address: device.address,
@@ -139,8 +147,11 @@ class _FlutterPRintState extends State<FlutterPRint> {
 
   void selectDevice(BluetoothPrinter device) async {
     if (selectedPrinter != null) {
-      if ((device.address != selectedPrinter!.address) || (device.typePrinter == PrinterType.usb && selectedPrinter!.vendorId != device.vendorId)) {
-        await PrinterManager.instance.disconnect(type: selectedPrinter!.typePrinter);
+      if ((device.address != selectedPrinter!.address) ||
+          (device.typePrinter == PrinterType.usb &&
+              selectedPrinter!.vendorId != device.vendorId)) {
+        await PrinterManager.instance
+            .disconnect(type: selectedPrinter!.typePrinter);
       }
     }
 
@@ -151,68 +162,152 @@ class _FlutterPRintState extends State<FlutterPRint> {
   Future _printReceiveTest() async {
     List<int> bytes = [];
 
-    // Xprinter XP-N160I
-    final profile = await CapabilityProfile.load(name: 'XP-N160I');
+    // // Xprinter XP-N160I
+    // final profile = await CapabilityProfile.load(name: 'XP-N160I');
     // default profile
-    // final profile = await CapabilityProfile.load();
-
+    final profile = await CapabilityProfile.load();
     // PaperSize.mm80 or PaperSize.mm58
-    final generator = Generator(PaperSize.mm58, profile);
+    final generator = Generator(PaperSize.mm80, profile);
     // bytes += generator.setGlobalCodeTable('CP1250');
-    bytes += generator.text('Test Print', styles: const PosStyles(align: PosAlign.left));
-    bytes += generator.text('Product 1');
-    bytes += generator.text('Product 2');
-    // print accent
-    bytes += generator.text('Comunicación', styles: const PosStyles(align: PosAlign.left, codeTable: 'CP1252'));
-    // bytes += generator.emptyLines(1);
-
-    // sum width total column must be 12
-    bytes += generator.row([
-      PosColumn(width: 8, text: 'Lemon lime export quality per pound x 5 units', styles: const PosStyles(align: PosAlign.left)),
-      PosColumn(width: 4, text: 'USD 2.00', styles: const PosStyles(align: PosAlign.right)),
-    ]);
-
-    // final ByteData data = await rootBundle.load('assets/ic_launcher.png');
-    // if (data.lengthInBytes > 0) {
-    //   final Uint8List imageBytes = data.buffer.asUint8List();
-    //   // decode the bytes into an image
+    // final String imageUrl = 'https://cinesync-dev.s3.amazonaws.com/report/images/theater/cinema/cinesync_logo-200h.png';
+    //
+    // final response = await http.get(Uri.parse("imageUrl"));
+    // if (response.statusCode == 200) {
+    //   final Uint8List imageBytes = response.bodyBytes;
     //   final decodedImage = img.decodeImage(imageBytes)!;
-    //   // Create a black bottom layer
-    //   // Resize the image to a 130x? thumbnail (maintaining the aspect ratio).
-    //   img.Image thumbnail = img.copyResize(decodedImage, height: 130);
-    //   // creates a copy of the original image with set dimensions
-    //   img.Image originalImg = img.copyResize(decodedImage, width: 380, height: 130);
-    //   // fills the original image with a white background
-    //   img.fill(originalImg, color: img.ColorRgb8(255, 255, 255));
-    //   var padding = (originalImg.width - thumbnail.width) / 2;
     //
-    //   // //insert the image inside the frame and center it
-    //   // drawImage(originalImg, thumbnail, dstX: padding.toInt());
-    //
-    //   // convert image to grayscale
-    //   var grayscaleImage = img.grayscale(originalImg);
-    //
-    //   bytes += generator.feed(1);
-    //   // bytes += generator.imageRaster(img.decodeImage(imageBytes)!, align: PosAlign.center);
-    //   bytes += generator.imageRaster(grayscaleImage, align: PosAlign.center);
-    //   bytes += generator.feed(1);
-    // }
+    //   final tempDir = await getTemporaryDirectory();
+    //   final tempPath = "${tempDir.path}/temp_image.jpg";
+    //   File(tempPath).writeAsBytesSync(img.encodeJpg(decodedImage));
 
-    // PosCodeTable.westEur or CP1252
-    // bytes += generator.text('Special 1: àÀ èÈ éÉ ûÛ üÜ çÇ ôÔ', styles: const PosStyles(codeTable: 'CP1252'));
-    // bytes += generator.text('Special 2: blåbærgrød', styles: const PosStyles(codeTable: 'CP1252'));
+      final ByteData data = await rootBundle.load("assets/Picture1.png");
+      if (data.lengthInBytes > 0) {
+        final Uint8List imageBytes = data.buffer.asUint8List();
+        // decode the bytes into an image
+        final decodedImage = img.decodeImage(imageBytes)!;
+        // Create a black bottom layer
+        // Resize the image to a 130x? thumbnail (maintaining the aspect ratio).
+        img.Image thumbnail = img.copyResize(decodedImage, height: 130);
+        // // creates a copy of the original image with set dimensions
+        img.Image originalImg =
+        img.copyResize(decodedImage, width: 300, height: 100);
+        // // fills the original image with a white background
+        // img.fill(originalImg, color: img.ColorRgb8(255, 255, 255));
+        // var padding = (originalImg.width - thumbnail.width) / 2;
 
-    // var esc = '\x1B';
-    // to support arabic must to know code page and the correct encode for example in some printers the code page is 22: arabic code page printer
-    // bytes += Uint8List.fromList(List.from('${esc}t'.codeUnits)..add(22));
-    // bytes += generator.textEncoded(Uint8List.fromList(utf8.encode('مرحبا بك')));
+        // //insert the image inside the frame and center it
+        // drawImage(originalImg, thumbnail, dstX: padding.toInt());
 
-    // Chinese characters
-    bytes += generator.row([
-      PosColumn(width: 8, text: '豚肉・木耳と玉子炒め弁当', styles: const PosStyles(align: PosAlign.left), containsChinese: true),
-      PosColumn(width: 4, text: '￥1,990', styles: const PosStyles(align: PosAlign.right), containsChinese: true),
-    ]);
+        // convert image to grayscale
+        var grayscaleImage = img.grayscale(originalImg);
 
+        bytes += generator.feed(1);
+         //bytes += generator.imageRaster(img.decodeImage(imageBytes)!, align: PosAlign.center);
+        bytes += generator.imageRaster(grayscaleImage, align: PosAlign.center);
+        bytes += generator.feed(1);
+      }
+
+    bytes += generator.setStyles(const PosStyles(
+        align: PosAlign.center,
+        height: PosTextSize.size1,
+        width: PosTextSize.size1,
+        bold: true));
+    bytes += generator.text('CineSync',
+        styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+    bytes += generator.text('456 Oak Avenue Somewhereville,Canada.',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('Hotline :',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('info@cinecinema.com',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('https://cinesync-v2-stg.layoutindex.dev',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.hr(ch: '-', len: 48);
+    bytes += generator.text('Transaction #:2307-1033-5930-5392',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.hr(ch: '-', len: 48);
+    bytes += generator.text('Elemental',
+        styles: const PosStyles(align: PosAlign.center, bold: true));
+    bytes += generator.emptyLines(1);
+    bytes += generator.textLeftRight("Screen","Room premium");
+    bytes += generator.textLeftRight("Show Date","10/07/2023");
+    bytes += generator.textLeftRight("Show Time","14:01");
+    bytes += generator.textLeftRight("Seat No","D10");
+    bytes += generator.textLeftRight("Type ","Students");
+
+    // bytes += generator.emptyLines(1);
+    // bytes += generator.row([
+    //   PosColumn(
+    //       width: 8,
+    //       text: 'Screen',
+    //       styles: const PosStyles(align: PosAlign.center, bold: true),
+    //       ),
+    //   PosColumn(
+    //       width: 4,
+    //       text: ': Room premium',
+    //       styles: const PosStyles(align: PosAlign.left, bold: true),
+    //      ),
+    // ]);
+    // bytes += generator.row([
+    //   PosColumn(
+    //       width: 6,
+    //       text: 'Show Date',
+    //       styles: const PosStyles(align: PosAlign.right, bold: true),
+    //      ),
+    //   PosColumn(
+    //       width: 6,
+    //       text: ' : 10/07/2023',
+    //       styles: const PosStyles(align: PosAlign.left, bold: true),
+    //       ),
+    // ]);
+    // bytes += generator.row([
+    //   PosColumn(
+    //       width: 6,
+    //       text: 'Show Time',
+    //     styles: const PosStyles(align: PosAlign.right, bold: true),
+    //       ),
+    //   PosColumn(
+    //       width: 6,
+    //       text: ': 14:01 ',
+    //     styles: const PosStyles(align: PosAlign.left, bold: true),
+    //      ),
+    // ]);
+    // bytes += generator.row([
+    //   PosColumn(
+    //       width: 6,
+    //       text: 'Seat No',
+    //     styles: const PosStyles(align: PosAlign.right, bold: true),
+    //      ),
+    //   PosColumn(
+    //       width: 6,
+    //       text: ': C17',
+    //     styles: const PosStyles(align: PosAlign.left, bold: true),
+    //       ),
+    // ]);
+    // bytes += generator.row([
+    //   PosColumn(
+    //       width: 8,
+    //       text: 'Type',
+    //     styles: const PosStyles(align: PosAlign.right, bold: true),
+    //      ),
+    //   PosColumn(
+    //       width: 4,
+    //       text: ': Adult',
+    //     styles: const PosStyles(align: PosAlign.left, bold: true),
+    //      ),
+    // ]);
+
+    bytes += generator.emptyLines(1);
+    bytes +=  generator.qrcode('example.com');
+    // const String base64String = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASIAAAEiAQMAAABncE31AAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABVklEQVRoge3Yyw3DIAwGYEsZICOxOiMxQCQ3+IEhUnvCufT3IW3I15NrO0CEQPxlnGxR72+6VPgiX72gEpV9cnWgqi5PoZKUJOKxLAm7L1CvqPOyZ3YL9Z7qd6WRVwfUG8rKgQ5WJb+sy1OoFBUTOUrk19yG2qam6Bnyifw9oHYq70L9clPmdrD+aFQHVIbqn6VJcqwcbkVeIo2g8pRT7UI6FXqa6jOPUPuVz+ExjG3329MUGYJKUP28YRTG9I18NkOlqaDSnppMBXJFBJWnJAfyOtpsKyCz2XLVoBLVWI6USK5IX46gEpU/sy4UCWOf0lBZKuK0qWA7MO1WTwS1UcXJA/nRzxjGU3VAZSj7/2t1FJ5LZM0eVILSLlRjDHhngnpLje2uvo7y0pmgUpUeu/lErt6eoDKVhE6FsfHVtfmdCWq/Yovq52y675ISiQxBJSgE4u/iAw0LD+J69uwvAAAAAElFTkSuQmCC";
+    // final List<int> qrByte = base64.decode(base64String);
+    // bytes += generator.qrcode(base64String,align: PosAlign.center,size: QRSize.Size4);
+    bytes += generator.hr(ch: '-', len: 32, linesAfter: 1);
+    bytes += generator.text('No refund or exchange',
+        styles: const PosStyles(align: PosAlign.center,bold: true));
+    bytes += generator.emptyLines(1);
+    bytes += generator.text('Technology Partner www.cinesync.io',
+        styles: const PosStyles(align: PosAlign.center,bold: true));
     _printEscPos(bytes, generator);
   }
 
@@ -228,7 +323,10 @@ class _FlutterPRintState extends State<FlutterPRint> {
         bytes += generator.cut();
         await printerManager.connect(
             type: bluetoothPrinter.typePrinter,
-            model: UsbPrinterInput(name: bluetoothPrinter.deviceName, productId: bluetoothPrinter.productId, vendorId: bluetoothPrinter.vendorId));
+            model: UsbPrinterInput(
+                name: bluetoothPrinter.deviceName,
+                productId: bluetoothPrinter.productId,
+                vendorId: bluetoothPrinter.vendorId));
         pendingTask = null;
         break;
       case PrinterType.bluetooth:
@@ -246,12 +344,15 @@ class _FlutterPRintState extends State<FlutterPRint> {
       case PrinterType.network:
         bytes += generator.feed(2);
         bytes += generator.cut();
-        connectedTCP = await printerManager.connect(type: bluetoothPrinter.typePrinter, model: TcpPrinterInput(ipAddress: bluetoothPrinter.address!));
+        connectedTCP = await printerManager.connect(
+            type: bluetoothPrinter.typePrinter,
+            model: TcpPrinterInput(ipAddress: bluetoothPrinter.address!));
         if (!connectedTCP) debugPrint(' --- please review your connection ---');
         break;
       default:
     }
-    if (bluetoothPrinter.typePrinter == PrinterType.bluetooth && Platform.isAndroid) {
+    if (bluetoothPrinter.typePrinter == PrinterType.bluetooth &&
+        Platform.isAndroid) {
       if (_currentStatus == BTStatus.connected) {
         printerManager.send(type: bluetoothPrinter.typePrinter, bytes: bytes);
         pendingTask = null;
@@ -272,7 +373,10 @@ class _FlutterPRintState extends State<FlutterPRint> {
       case PrinterType.usb:
         await printerManager.connect(
             type: selectedPrinter!.typePrinter,
-            model: UsbPrinterInput(name: selectedPrinter!.deviceName, productId: selectedPrinter!.productId, vendorId: selectedPrinter!.vendorId));
+            model: UsbPrinterInput(
+                name: selectedPrinter!.deviceName,
+                productId: selectedPrinter!.productId,
+                vendorId: selectedPrinter!.vendorId));
         _isConnected = true;
         break;
       case PrinterType.bluetooth:
@@ -285,7 +389,9 @@ class _FlutterPRintState extends State<FlutterPRint> {
                 autoConnect: _reconnect));
         break;
       case PrinterType.network:
-        await printerManager.connect(type: selectedPrinter!.typePrinter, model: TcpPrinterInput(ipAddress: selectedPrinter!.address!));
+        await printerManager.connect(
+            type: selectedPrinter!.typePrinter,
+            model: TcpPrinterInput(ipAddress: selectedPrinter!.address!));
         _isConnected = true;
         break;
       default:
@@ -318,9 +424,10 @@ class _FlutterPRintState extends State<FlutterPRint> {
                             onPressed: selectedPrinter == null || _isConnected
                                 ? null
                                 : () {
-                              _connectDevice();
-                            },
-                            child: const Text("Connect", textAlign: TextAlign.center),
+                                    _connectDevice();
+                                  },
+                            child: const Text("Connect",
+                                textAlign: TextAlign.center),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -329,12 +436,15 @@ class _FlutterPRintState extends State<FlutterPRint> {
                             onPressed: selectedPrinter == null || !_isConnected
                                 ? null
                                 : () {
-                              if (selectedPrinter != null) printerManager.disconnect(type: selectedPrinter!.typePrinter);
-                              setState(() {
-                                _isConnected = false;
-                              });
-                            },
-                            child: const Text("Disconnect", textAlign: TextAlign.center),
+                                    if (selectedPrinter != null)
+                                      printerManager.disconnect(
+                                          type: selectedPrinter!.typePrinter);
+                                    setState(() {
+                                      _isConnected = false;
+                                    });
+                                  },
+                            child: const Text("Disconnect",
+                                textAlign: TextAlign.center),
                           ),
                         ),
                       ],
@@ -383,9 +493,11 @@ class _FlutterPRintState extends State<FlutterPRint> {
                     },
                   ),
                   Visibility(
-                    visible: defaultPrinterType == PrinterType.bluetooth && Platform.isAndroid,
+                    visible: defaultPrinterType == PrinterType.bluetooth &&
+                        Platform.isAndroid,
                     child: SwitchListTile.adaptive(
-                      contentPadding: const EdgeInsets.only(bottom: 20.0, left: 20),
+                      contentPadding:
+                          const EdgeInsets.only(bottom: 20.0, left: 20),
                       title: const Text(
                         "This device supports ble (low energy)",
                         textAlign: TextAlign.start,
@@ -403,9 +515,11 @@ class _FlutterPRintState extends State<FlutterPRint> {
                     ),
                   ),
                   Visibility(
-                    visible: defaultPrinterType == PrinterType.bluetooth && Platform.isAndroid,
+                    visible: defaultPrinterType == PrinterType.bluetooth &&
+                        Platform.isAndroid,
                     child: SwitchListTile.adaptive(
-                      contentPadding: const EdgeInsets.only(bottom: 20.0, left: 20),
+                      contentPadding:
+                          const EdgeInsets.only(bottom: 20.0, left: 20),
                       title: const Text(
                         "reconnect",
                         textAlign: TextAlign.start,
@@ -423,45 +537,60 @@ class _FlutterPRintState extends State<FlutterPRint> {
                       children: devices
                           .map(
                             (device) => ListTile(
-                          title: Text('${device.deviceName}'),
-                          subtitle: Platform.isAndroid && defaultPrinterType == PrinterType.usb
-                              ? null
-                              : Visibility(visible: !Platform.isWindows, child: Text("${device.address}")),
-                          onTap: () {
-                            // do something
-                            selectDevice(device);
-                          },
-                          leading: selectedPrinter != null &&
-                              ((device.typePrinter == PrinterType.usb && Platform.isWindows
-                                  ? device.deviceName == selectedPrinter!.deviceName
-                                  : device.vendorId != null && selectedPrinter!.vendorId == device.vendorId) ||
-                                  (device.address != null && selectedPrinter!.address == device.address))
-                              ? const Icon(
-                            Icons.check,
-                            color: Colors.green,
-                          )
-                              : null,
-                          trailing: OutlinedButton(
-                            onPressed: selectedPrinter == null || device.deviceName != selectedPrinter?.deviceName
-                                ? null
-                                : () async {
-                              _printReceiveTest();
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 2, horizontal: 20),
-                              child: Text("Print test ticket", textAlign: TextAlign.center),
+                              title: Text('${device.deviceName}'),
+                              subtitle: Platform.isAndroid &&
+                                      defaultPrinterType == PrinterType.usb
+                                  ? null
+                                  : Visibility(
+                                      visible: !Platform.isWindows,
+                                      child: Text("${device.address}")),
+                              onTap: () {
+                                // do something
+                                selectDevice(device);
+                              },
+                              leading: selectedPrinter != null &&
+                                      ((device.typePrinter == PrinterType.usb &&
+                                                  Platform.isWindows
+                                              ? device.deviceName ==
+                                                  selectedPrinter!.deviceName
+                                              : device.vendorId != null &&
+                                                  selectedPrinter!.vendorId ==
+                                                      device.vendorId) ||
+                                          (device.address != null &&
+                                              selectedPrinter!.address ==
+                                                  device.address))
+                                  ? const Icon(
+                                      Icons.check,
+                                      color: Colors.green,
+                                    )
+                                  : null,
+                              trailing: OutlinedButton(
+                                onPressed: selectedPrinter == null ||
+                                        device.deviceName !=
+                                            selectedPrinter?.deviceName
+                                    ? null
+                                    : () async {
+                                        _printReceiveTest();
+                                      },
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 2, horizontal: 20),
+                                  child: Text("Print test ticket",
+                                      textAlign: TextAlign.center),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      )
+                          )
                           .toList()),
                   Visibility(
-                    visible: defaultPrinterType == PrinterType.network && Platform.isWindows,
+                    visible: defaultPrinterType == PrinterType.network &&
+                        Platform.isWindows,
                     child: Padding(
                       padding: const EdgeInsets.only(top: 10.0),
                       child: TextFormField(
                         controller: _ipController,
-                        keyboardType: const TextInputType.numberWithOptions(signed: true),
+                        keyboardType:
+                            const TextInputType.numberWithOptions(signed: true),
                         decoration: const InputDecoration(
                           label: Text("Ip Address"),
                           prefixIcon: Icon(Icons.wifi, size: 24),
@@ -471,12 +600,14 @@ class _FlutterPRintState extends State<FlutterPRint> {
                     ),
                   ),
                   Visibility(
-                    visible: defaultPrinterType == PrinterType.network && Platform.isWindows,
+                    visible: defaultPrinterType == PrinterType.network &&
+                        Platform.isWindows,
                     child: Padding(
                       padding: const EdgeInsets.only(top: 10.0),
                       child: TextFormField(
                         controller: _portController,
-                        keyboardType: const TextInputType.numberWithOptions(signed: true),
+                        keyboardType:
+                            const TextInputType.numberWithOptions(signed: true),
                         decoration: const InputDecoration(
                           label: Text("Port"),
                           prefixIcon: Icon(Icons.numbers_outlined, size: 24),
@@ -486,17 +617,21 @@ class _FlutterPRintState extends State<FlutterPRint> {
                     ),
                   ),
                   Visibility(
-                    visible: defaultPrinterType == PrinterType.network && Platform.isWindows,
+                    visible: defaultPrinterType == PrinterType.network &&
+                        Platform.isWindows,
                     child: Padding(
                       padding: const EdgeInsets.only(top: 10.0),
                       child: OutlinedButton(
                         onPressed: () async {
-                          if (_ipController.text.isNotEmpty) setIpAddress(_ipController.text);
+                          if (_ipController.text.isNotEmpty)
+                            setIpAddress(_ipController.text);
                           _printReceiveTest();
                         },
                         child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 4, horizontal: 50),
-                          child: Text("Print test ticket", textAlign: TextAlign.center),
+                          padding:
+                              EdgeInsets.symmetric(vertical: 4, horizontal: 50),
+                          child: Text("Print test ticket",
+                              textAlign: TextAlign.center),
                         ),
                       ),
                     ),
@@ -525,11 +660,11 @@ class BluetoothPrinter {
 
   BluetoothPrinter(
       {this.deviceName,
-        this.address,
-        this.port,
-        this.state,
-        this.vendorId,
-        this.productId,
-        this.typePrinter = PrinterType.bluetooth,
-        this.isBle = false});
+      this.address,
+      this.port,
+      this.state,
+      this.vendorId,
+      this.productId,
+      this.typePrinter = PrinterType.bluetooth,
+      this.isBle = false});
 }

@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_pos_printer_platform/esc_pos_utils_platform/src/barcode.dart';
 import 'package:flutter_pos_printer_platform/esc_pos_utils_platform/src/capability_profile.dart';
@@ -11,7 +10,6 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart' show rootBundle;
-
 import 'flutterpritn.dart';
 
 
