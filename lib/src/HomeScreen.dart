@@ -115,61 +115,72 @@ class HomeScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   ElevatedButton(onPressed: (){
-                    showDialog(context: context, builder: (BuildContext context){
-                      return Column()
-                    });
+                    // showDialog(context: context, builder: (BuildContext context){
+                    //   return Column()
+                    // });
                   }, child: const Text("Add Printer")),
                 ],
               ),
               SizedBox(height: 30,),
               Container(
-                  width: 500,
+                  width: 800,
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: Colors.black12,
                       width: 2,
                     ),
                   ),
-                  child:Table(
-                    defaultColumnWidth: const FixedColumnWidth(100),
-                    border: TableBorder.all(color: Colors.white10),
-                    children:  [
-                       const TableRow(
-                          decoration: BoxDecoration(
-                            color: Colors.blueAccent,
-                          ),
-                          children: [
-                            TableCell(
+                  child:Obx(
+                    ()=> Table(
+                      defaultColumnWidth: const FixedColumnWidth(100),
+                      border: TableBorder.all(color: Colors.white10),
+                      children:  [
+                         const TableRow(
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent,
+                            ),
+                            children: [
+                              TableCell(
 
-                                child: Text("Printer Key",textAlign: TextAlign.center,style: TextStyle(
-                              color: Colors.white,
-                            ),)),
-                            TableCell( child: Text("Printer",textAlign: TextAlign.center,style: TextStyle(
-                              color: Colors.white,
-                            ))),
-                            TableCell(child: Text("Action",textAlign: TextAlign.center,style: TextStyle(
-                              color: Colors.white,
-                            ))),
-                          ]
-                      ),
-                      if(printController.selectedPrinterMap.value.isEmpty)
-                        const TableRow(
-                          children: [
-                            TableCell(child: Text("No Printer Selected",textAlign: TextAlign.center)),
-                            TableCell(child: Text("No Printer Selected",textAlign: TextAlign.center)),
-                            TableCell(child: Text("No Printer Selected",textAlign: TextAlign.center)),
-                          ],
-                        )
+                                  child: Text("Printer Key",textAlign: TextAlign.center,style: TextStyle(
+                                color: Colors.white,
+                              ),)),
+                              TableCell( child: Text("Printer",textAlign: TextAlign.center,style: TextStyle(
+                                color: Colors.white,
+                              ))),
+                              TableCell(child: Text("Action",textAlign: TextAlign.center,style: TextStyle(
+                                color: Colors.white,
+                              ))),
+                            ]
+                        ),
+                        if(printController.selectedPrinterMap.value.isEmpty)
+                          const TableRow(
+                            children: [
+                              TableCell(child: Text("No Printer Selected",textAlign: TextAlign.center)),
+                              TableCell(child: Text("No Printer Selected",textAlign: TextAlign.center)),
+                              TableCell(child: Text("No Printer Selected",textAlign: TextAlign.center)),
+                            ],
+                          )
               ,
-                      if(printController.selectedPrinterMap.value.isNotEmpty)
-                      ...printController.selectedPrinterMap.value.map((element) => TableRow(
-                        children: [
-                          TableCell(child: Text(element.key ?? "")),
-                          TableCell(child: Text(element.deviceName ?? "")),
-                          TableCell(child: ElevatedButton(onPressed: (){}, child: const Text("Connect")))
-                        ],
-                      )).toList(),
-                    ],
+                        if(printController.selectedPrinterMap.value.isNotEmpty)
+                        ...printController.selectedPrinterMap.value.map((element) => TableRow(
+                          children: [
+                            TableCell(child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(element.key ?? "",textAlign: TextAlign.center,),
+                            )),
+                            TableCell(child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(element.deviceName ?? "",textAlign: TextAlign.center,),
+                            )),
+                            TableCell(child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: ElevatedButton(onPressed: (){}, child: const Text("Connect")),
+                            ))
+                          ],
+                        )).toList(),
+                      ],
+                    ),
                   )
               ),
             ],

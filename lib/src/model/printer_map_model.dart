@@ -9,7 +9,7 @@ String printMapModelToJson(PrintMapModel data) => json.encode(data.toJson());
 class PrintMapModel {
   String? key;
   String? deviceName;
-  String? isConnected;
+  bool? isConnected;
   String? status;
   PrinterModel? printer;
   PrintMapModel({

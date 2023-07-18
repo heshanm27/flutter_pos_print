@@ -77,7 +77,7 @@ class PrintController extends GetxController {
         }
       }
     });
-
+      debugPrint('selectedPrinterMap.length: ${selectedPrinterMap.length}');
   }
 
 
@@ -107,6 +107,27 @@ class PrintController extends GetxController {
       ));
 
 
+      if(device.isDefault == true){
+        PrinterModel _model = PrinterModel(
+          deviceName: device.name,
+          address: device.address,
+          isBle: isBle.value,
+          vendorId: device.vendorId,
+          productId: device.productId,
+          typePrinter: defaultPrinterType,
+        );
+        selectedPrinter.value = _model;
+        selectedPrinterMap.add(PrintMapModel(
+          key: "Invoice",
+          printer: _model,
+          deviceName: device.name,
+          isConnected: false,
+          status: 'Disconnected',
+        ));
+        update();
+        refresh();
+      }
+      debugPrint('selectedPrinterMap.length: ${selectedPrinterMap.length}');
       // set default printer
       //   if(device.isDefault == true){
       //     selectedPrinter.value = PrinterModel(
