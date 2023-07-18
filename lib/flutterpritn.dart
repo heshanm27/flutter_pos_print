@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pos_printer_platform/esc_pos_utils_platform/esc_pos_utils_platform.dart';
 import 'package:flutter_pos_printer_platform/flutter_pos_printer_platform.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image/image.dart' as img;
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
+
 class FlutterPRint extends StatefulWidget {
   const FlutterPRint({Key? key}) : super(key: key);
 
@@ -18,7 +18,7 @@ class FlutterPRint extends StatefulWidget {
 
 class _FlutterPRintState extends State<FlutterPRint> {
   // Printer Type [bluetooth, usb, network]
-  var defaultPrinterType = PrinterType.network;
+  var defaultPrinterType = PrinterType.usb;
   var _isBle = false;
   var _reconnect = false;
   var _isConnected = false;
@@ -29,9 +29,6 @@ class _FlutterPRintState extends State<FlutterPRint> {
   StreamSubscription<USBStatus>? _subscriptionUsbStatus;
 
   BTStatus _currentStatus = BTStatus.none;
-
-  // _currentUsbStatus is only supports on Android
-  // ignore: unused_field
   USBStatus _currentUsbStatus = USBStatus.none;
   List<int>? pendingTask;
   String _ipAddress = '';
@@ -104,6 +101,7 @@ class _FlutterPRintState extends State<FlutterPRint> {
 
   // method to scan devices according PrinterType
   void _scan() {
+
     devices.clear();
     _subscription = printerManager
         .discovery(type: defaultPrinterType, isBle: _isBle)
@@ -116,7 +114,20 @@ class _FlutterPRintState extends State<FlutterPRint> {
         productId: device.productId,
         typePrinter: defaultPrinterType,
       ));
-      setState(() {});
+      setState(() {
+        if(device.isDefault == true){
+          selectedPrinter = BluetoothPrinter(
+            deviceName: device.name,
+            address: device.address,
+            isBle: _isBle,
+            vendorId: device.vendorId,
+            productId: device.productId,
+            typePrinter: defaultPrinterType,
+          );
+
+        }
+      });
+      _connectDevice();
     });
   }
 
@@ -635,7 +646,8 @@ class _FlutterPRintState extends State<FlutterPRint> {
                         ),
                       ),
                     ),
-                  )
+                  ),
+                  ElevatedButton(onPressed: ()=>context.go("/print"), child: Text("Printer go to print")),
                 ],
               ),
             ),
@@ -654,7 +666,6 @@ class BluetoothPrinter {
   String? vendorId;
   String? productId;
   bool? isBle;
-
   PrinterType typePrinter;
   bool? state;
 
