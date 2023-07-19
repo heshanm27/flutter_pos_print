@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pos_printer_platform/flutter_pos_printer_platform.dart';
 import 'package:flutter_print/src/controller/print_controller.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 
-import 'model/printer_model.dart';
+import 'components/printerDialog.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -11,199 +11,235 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     PrintController printController = Get.find<PrintController>();
+    GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final ipController = TextEditingController();
-    final portController = TextEditingController();
+    final portController = TextEditingController(text: "9001");
     return Scaffold(
       body: SafeArea(
         child: Container(
           width: double.infinity,
-           height: double.infinity,
+          height: double.infinity,
           padding: const EdgeInsets.all(12),
-          child:Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                Expanded(
-                  child: Container(
-
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black12,
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
-                      const Text("TCP/IP Printer"),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text("IP Address: "),
-                          Flexible(
-                            child: TextFormField(
-                              decoration: const InputDecoration(
-                                hintText: 'Enter IP Address',
-                              ),
-                              controller: ipController,
-                              maxLines: 1,
-                            ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.black12,
+                            width: 2,
                           ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          const Text("PORT: "),
-                          Flexible(
-                            child: TextFormField(
-                              controller: portController,
-                              decoration: const InputDecoration(
-                                hintText: 'Enter PORT',
-                              ),
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 30,),
-                      ElevatedButton(onPressed: (){}, child: const Text("Connect"))
-                    ],
-                  ),
-                    ),
-                ),
-                  SizedBox(width: 50,),
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.black12,
-                          width: 2,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: Form(
-                        child: Column(
-                          children: [
-                            const Text("WebSocket Connect"),
-                            Row(
-                              children: [
-                                const Text("URL: "),
-                                Flexible(
-                                  child: TextFormField(
-                                    decoration: InputDecoration(
-                                      hintText: 'Enter Web Socket Url',
-                                    ),
-                                    maxLines: 1,
+                        padding: const EdgeInsets.all(12),
+                        child: Form(
+                          key: formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Text("TCP/IP Printer"),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Flexible(
+                                      flex: 2, child: Text("IP Address: ")),
+                                  const SizedBox(
+                                    width: 10,
                                   ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 30,),
-                            ElevatedButton(onPressed: (){}, child: const Text("Connect"))
-                          ],
+                                  Flexible(
+                                    flex: 2,
+                                    child: TextFormField(
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter ip address';
+                                        }
+                                        return null;
+                                      },
+                                      decoration: const InputDecoration(
+                                        hintText: 'Enter IP Address',
+                                      ),
+                                      controller: ipController,
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Flexible(
+                                      flex: 2, child: Text("PORT: ")),
+                                  const SizedBox(
+                                    width: 10,
+                                  ),
+                                  Flexible(
+                                    flex: 2,
+                                    child: TextFormField(
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter port';
+                                        }
+                                        return null;
+                                      },
+                                      controller: portController,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Enter PORT',
+                                      ),
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 30,
+                              ),
+                              ElevatedButton(
+                                  onPressed: () {
+                                    if (formKey.currentState!.validate()) {
+                                      // printController.connectPrinter(
+                                      //     ipController.text,
+                                      //     int.parse(portController.text));
+                                    }
+                                  },
+                                  child: const Text("Connect"))
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 30,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ElevatedButton(onPressed: (){
-                    // showDialog(context: context, builder: (BuildContext context){
-                    //   return Column()
-                    // });
-                  }, child: const Text("Add Printer")),
-                ],
-              ),
-              SizedBox(height: 30,),
-              Container(
-                  width: 800,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black12,
-                      width: 2,
+                    const SizedBox(
+                      width: 50,
                     ),
-                  ),
-                  child:Obx(
-                    ()=> Table(
-                      defaultColumnWidth: const FixedColumnWidth(100),
-                      border: TableBorder.all(color: Colors.white10),
-                      children:  [
-                         const TableRow(
-                            decoration: BoxDecoration(
-                              color: Colors.blueAccent,
-                            ),
-                            children: [
-                              TableCell(
-
-                                  child: Text("Printer Key",textAlign: TextAlign.center,style: TextStyle(
-                                color: Colors.white,
-                              ),)),
-                              TableCell( child: Text("Printer",textAlign: TextAlign.center,style: TextStyle(
-                                color: Colors.white,
-                              ))),
-                              TableCell(child: Text("Action",textAlign: TextAlign.center,style: TextStyle(
-                                color: Colors.white,
-                              ))),
-                            ]
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.black12,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        if(printController.selectedPrinterMap.value.isEmpty)
-                          const TableRow(
+                        padding: const EdgeInsets.all(12),
+                        child: Form(
+                          child: Column(
                             children: [
-                              TableCell(child: Text("No Printer Selected",textAlign: TextAlign.center)),
-                              TableCell(child: Text("No Printer Selected",textAlign: TextAlign.center)),
-                              TableCell(child: Text("No Printer Selected",textAlign: TextAlign.center)),
+                              const Text("WebSocket Connect"),
+                              Row(
+                                children: [
+                                  const Text("URL: "),
+                                  Flexible(
+                                    child: TextFormField(
+                                      decoration: const InputDecoration(
+                                        hintText: 'Enter Web Socket Url',
+                                      ),
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 30,
+                              ),
+                              ElevatedButton(
+                                  onPressed: () {},
+                                  child: const Text("Connect"))
                             ],
-                          )
-              ,
-                        if(printController.selectedPrinterMap.value.isNotEmpty)
-                        ...printController.selectedPrinterMap.value.map((element) => TableRow(
-                          children: [
-                            TableCell(child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(element.key ?? "",textAlign: TextAlign.center,),
-                            )),
-                            TableCell(child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(element.deviceName ?? "",textAlign: TextAlign.center,),
-                            )),
-                            TableCell(child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: ElevatedButton(onPressed: (){}, child: const Text("Connect")),
-                            ))
-                          ],
-                        )).toList(),
-                      ],
+                          ),
+                        ),
+                      ),
                     ),
-                  )
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(
+                  height: 30,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return const PrinterDialog();
+                              });
+                        },
+                        child: const Text("Add Printer")),
+                    ElevatedButton(onPressed: (){
+                      printController.printTicketOnMultiDevice("gg");
+                    }, child: const Text("Print multi Test"))
+                  ],
+                ),
+                const SizedBox(
+                  height: 30,
+                ),
+                Obx(
+                  () => DataTable(
+                      columns: const [
+                        DataColumn(label: Text("Printer Name")),
+                        DataColumn(label: Text("Printer Key")),
+                        DataColumn(label: Text("Device Status")),
+                        DataColumn(label: Text("Device Action")),
+                        DataColumn(label: Text("Action")),
+                      ],
+                      rows: printController.selectedPrinterMap.value
+                          .map((e) => DataRow(cells: [
+                                DataCell(Text(e.key ?? ""), onTap: () {
+                                  printController.selectedPrinterMap.value
+                                      .remove(e);
+                                }),
+                                DataCell(
+                                  Text(e.printer?.deviceName ?? ""),
+                                ),
+                                DataCell(
+                                  e.status == "Connecting"
+                                      ? const SpinKitThreeBounce(
+                                          color: Colors.grey,
+                                          size: 12,
+                                        )
+                                      : Text(e.status ?? ""),
+                                ),
+                                DataCell(ElevatedButton(
+                                    onPressed: () {
+                                      printController.printCommand(e);
+                                    },
+                                    child: const Text("Print Test"))),
+                                DataCell(SingleChildScrollView(
+                                  child: Row(
+                                    children: [
+                                      IconButton(
+                                          onPressed: () {
+                                            printController.connectOneDevice(e);
+                                          },
+                                          splashRadius: 10,
+                                          icon: const Icon(
+                                            Icons.refresh,
+                                          )),
+                                      IconButton(
+                                          onPressed: () {
+                                            printController.removeMapPrinter(e);
+                                          },
+                                          splashRadius: 10,
+                                          icon: const Icon(
+                                            Icons.delete,
+                                          )),
+                                    ],
+                                  ),
+                                )),
+                              ]))
+                          .toList()),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-
-
-  //   Iterable<TableRow> mapDevices(List<PrinterModel> devices)  {
-  //       return devices.map((e) =>TableRow(
-  //         children: [
-  //           TableCell(child: Text(e.deviceName ?? "")),
-  //           TableCell(child: Text(e.)),
-  //           TableCell(child: ElevatedButton(onPressed: (){}, child: const Text("Connect")))
-  //         ],
-  //       ));
-  //
-  //
-  // }
-
 }
-
-
-

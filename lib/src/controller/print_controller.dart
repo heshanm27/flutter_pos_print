@@ -9,14 +9,13 @@ import 'package:flutter_pos_printer_platform/esc_pos_utils_platform/src/pos_styl
 import 'package:flutter_pos_printer_platform/flutter_pos_printer_platform.dart';
 import 'package:flutter_print/src/model/printer_model.dart';
 import 'package:get/get.dart';
-
+import '../model/print_data.dart';
 import '../model/printer_map_model.dart';
 
 class PrintController extends GetxController {
   var defaultPrinterType = PrinterType.usb;
   RxBool isBle = false.obs;
   RxBool reconnect = false.obs;
-  RxBool isConnected = false.obs;
   var printerManager = PrinterManager.instance;
   RxList<PrinterModel> devices = <PrinterModel>[].obs;
   RxList<PrintMapModel> selectedPrinterMap = <PrintMapModel>[].obs;
@@ -27,42 +26,33 @@ class PrintController extends GetxController {
   BTStatus _currentStatus = BTStatus.none;
   USBStatus _currentUsbStatus = USBStatus.none;
   List<int>? pendingTask;
-  String _ipAddress = '';
-  String _port = '9100';
-
   Rx<PrinterModel?> selectedPrinter = PrinterModel().obs;
 
   @override
   void onInit() {
     if (Platform.isWindows) defaultPrinterType = PrinterType.usb;
     super.onInit();
-    _scan();
+    scan();
 
     // subscription to listen change status of bluetooth connection
     subscriptionBtStatus =
         PrinterManager.instance.stateBluetooth.listen((status) {
-          _currentStatus = status;
-          if (status == BTStatus.connected) {
-            isConnected.value = true;
-          }
-          if (status == BTStatus.none) {
-            isConnected.value = false;
-          }
-          if (status == BTStatus.connected && pendingTask != null) {
-            if (Platform.isAndroid) {
-              Future.delayed(const Duration(milliseconds: 1000), () {
-                PrinterManager.instance
-                    .send(type: PrinterType.bluetooth, bytes: pendingTask!);
-                pendingTask = null;
-              });
-            } else if (Platform.isIOS) {
-              PrinterManager.instance
-                  .send(type: PrinterType.bluetooth, bytes: pendingTask!);
-              pendingTask = null;
-            }
-          }
-        });
+      _currentStatus = status;
 
+      if (status == BTStatus.connected && pendingTask != null) {
+        if (Platform.isAndroid) {
+          Future.delayed(const Duration(milliseconds: 1000), () {
+            PrinterManager.instance
+                .send(type: PrinterType.bluetooth, bytes: pendingTask!);
+            pendingTask = null;
+          });
+        } else if (Platform.isIOS) {
+          PrinterManager.instance
+              .send(type: PrinterType.bluetooth, bytes: pendingTask!);
+          pendingTask = null;
+        }
+      }
+    });
 
     //  PrinterManager.instance.stateUSB is only supports on Android
     subscriptionUsbStatus = PrinterManager.instance.stateUSB.listen((status) {
@@ -77,10 +67,7 @@ class PrintController extends GetxController {
         }
       }
     });
-      debugPrint('selectedPrinterMap.length: ${selectedPrinterMap.length}');
   }
-
-
 
   @override
   void onClose() {
@@ -91,8 +78,7 @@ class PrintController extends GetxController {
     super.onClose();
   }
 
-
-  void _scan() {
+  void scan() {
     devices.clear();
     subscription = printerManager
         .discovery(type: defaultPrinterType, isBle: isBle.value)
@@ -106,67 +92,53 @@ class PrintController extends GetxController {
         typePrinter: defaultPrinterType,
       ));
 
-
-      if(device.isDefault == true){
-        PrinterModel _model = PrinterModel(
-          deviceName: device.name,
-          address: device.address,
-          isBle: isBle.value,
-          vendorId: device.vendorId,
-          productId: device.productId,
-          typePrinter: defaultPrinterType,
-        );
-        selectedPrinter.value = _model;
-        selectedPrinterMap.add(PrintMapModel(
-          key: "Invoice",
-          printer: _model,
-          deviceName: device.name,
-          isConnected: false,
-          status: 'Disconnected',
-        ));
-        update();
-        refresh();
-      }
-      debugPrint('selectedPrinterMap.length: ${selectedPrinterMap.length}');
-      // set default printer
-      //   if(device.isDefault == true){
-      //     selectedPrinter.value = PrinterModel(
-      //       deviceName: device.name,
-      //       address: device.address,
-      //       isBle: isBle.value,
-      //       vendorId: device.vendorId,
-      //       productId: device.productId,
-      //       typePrinter: defaultPrinterType,
-      //     );
-      //   }
-      // connectDevice();
+      // if (device.isDefault == true) {
+      //   PrinterModel _model = PrinterModel(
+      //     deviceName: device.name,
+      //     address: device.address,
+      //     isBle: isBle.value,
+      //     vendorId: device.vendorId,
+      //     productId: device.productId,
+      //     typePrinter: defaultPrinterType,
+      //   );
+      //   selectedPrinter.value = _model;
+      //   selectedPrinterMap.add(PrintMapModel(
+      //     key: "Invoice",
+      //     printer: _model,
+      //     deviceName: device.name,
+      //     isConnected: false,
+      //     status: 'Disconnected',
+      //   ));
+      //   update();
+      //   refresh();
+      // }
     });
   }
+  // void setPort(String value) {
+  //   if (value.isEmpty) value = '9100';
+  //   _port = value;
+  //   var device = PrinterModel(
+  //     deviceName: value,
+  //     address: _ipAddress,
+  //     port: _port,
+  //     typePrinter: PrinterType.network,
+  //     state: false,
+  //   );
+  //   selectDevice(device);
+  // }
+  // void setIpAddress(String value) {
+  //   _ipAddress = value;
+  //   var device = PrinterModel(
+  //     deviceName: value,
+  //     address: _ipAddress,
+  //     port: _port,
+  //     typePrinter: PrinterType.network,
+  //     state: false,
+  //   );
+  //   selectDevice(device);
+  // }
+  void setNetWorkPrinter(String port,String address){
 
-
-  void setPort(String value) {
-    if (value.isEmpty) value = '9100';
-    _port = value;
-    var device = PrinterModel(
-      deviceName: value,
-      address: _ipAddress,
-      port: _port,
-      typePrinter: PrinterType.network,
-      state: false,
-    );
-    selectDevice(device);
-  }
-
-  void setIpAddress(String value) {
-    _ipAddress = value;
-    var device = PrinterModel(
-      deviceName: value,
-      address: _ipAddress,
-      port: _port,
-      typePrinter: PrinterType.network,
-      state: false,
-    );
-    selectDevice(device);
   }
 
   void selectDevice(PrinterModel device) async {
@@ -182,7 +154,103 @@ class PrintController extends GetxController {
     selectedPrinter.value = device;
   }
 
-  Future _printReceiveTest() async {
+  void mapPrinterToKey(String key, PrinterModel printer) {
+    selectedPrinterMap.add(PrintMapModel(key: key, printer: printer,deviceName: printer.deviceName,isConnected: true,status: 'Connected'));
+    refresh();
+    update();
+    // connectMapDeviceTo();
+  }
+
+  void connectMapDeviceTo() {
+    for (var element in selectedPrinterMap) {
+      if (element.printer == null) continue;
+      connectDevice(element.printer!).then((value) {
+        if (value == true) {
+          element.isConnected = true;
+          element.status = 'Connected';
+        } else {
+          element.isConnected = false;
+        }
+      });
+    }
+  }
+
+  void connectOneDevice(PrintMapModel element) {
+    debugPrint('element: ${element.status}');
+    changePrinterStatus(element, 'Connecting');
+    connectDevice(element.printer!).then((value) {
+      if (value == true) {
+        element.isConnected = true;
+        element.status = 'Connected';
+        selectedPrinterMap.refresh();
+      } else {
+        changePrinterStatus(element,'Disconnected');
+        element.isConnected = false;
+      }
+    });
+
+  }
+
+  void changePrinterStatus(PrintMapModel device,String status) {
+    if (device.printer == null) return;
+    for (var element in selectedPrinterMap) {
+      if(element.key == device.key){
+        element.status = status;
+      }
+    }
+  }
+
+  void removeMapPrinter(PrintMapModel mapModel) {
+    selectedPrinterMap.remove(mapModel);
+    refresh();
+    update();
+  }
+
+  void printCommand(PrintMapModel model) async{
+    changePrinterStatus(model, 'Printing');
+    if(model.isConnected == false){
+      Get.snackbar('Error', 'Printer is not connected');
+      return;
+    }
+    PrintData printData  = await printReceiveTest();
+    if(printData == null){
+      Get.snackbar('Error', 'Print data is null');
+      return;
+    }
+    await printEscPos(printData, model.printer!);
+    changePrinterStatus(model, 'Connected');
+  }
+
+
+  Future<bool> connectDevice(PrinterModel device) async {
+    switch (device.typePrinter) {
+      case PrinterType.usb:
+        return await printerManager.connect(
+            type: device.typePrinter,
+            model: UsbPrinterInput(
+                name: device.deviceName,
+                productId: device.productId,
+                vendorId: device.vendorId));
+      case PrinterType.bluetooth:
+        return await printerManager.connect(
+            type: device.typePrinter,
+            model: BluetoothPrinterInput(
+                name: device.deviceName,
+                address: device.address!,
+                isBle: device.isBle ?? false,
+                autoConnect: reconnect.value));
+
+      case PrinterType.network:
+        return await printerManager.connect(
+            type:device.typePrinter,
+            model: TcpPrinterInput(ipAddress: device.address!));
+      default:
+        return false;
+    }
+  }
+
+
+  Future<PrintData> printReceiveTest() async {
     List<int> bytes = [];
 
     // // Xprinter XP-N160I
@@ -236,7 +304,11 @@ class PrintController extends GetxController {
         width: PosTextSize.size1,
         bold: true));
     bytes += generator.text('CineSync',
-        styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+        styles: const PosStyles(
+            align: PosAlign.center,
+            bold: true,
+            height: PosTextSize.size2,
+            width: PosTextSize.size2));
     bytes += generator.text('456 Oak Avenue Somewhereville,Canada.',
         styles: const PosStyles(align: PosAlign.center));
     bytes += generator.text('Hotline :',
@@ -252,11 +324,11 @@ class PrintController extends GetxController {
     bytes += generator.text('Elemental',
         styles: const PosStyles(align: PosAlign.center, bold: true));
     bytes += generator.emptyLines(1);
-    bytes += generator.textLeftRight("Screen","Room premium");
-    bytes += generator.textLeftRight("Show Date","10/07/2023");
-    bytes += generator.textLeftRight("Show Time","14:01");
-    bytes += generator.textLeftRight("Seat No","D10");
-    bytes += generator.textLeftRight("Type ","Students");
+    bytes += generator.textLeftRight("Screen", "Room premium");
+    bytes += generator.textLeftRight("Show Date", "10/07/2023");
+    bytes += generator.textLeftRight("Show Time", "14:01");
+    bytes += generator.textLeftRight("Seat No", "D10");
+    bytes += generator.textLeftRight("Type ", "Students");
 
     // bytes += generator.emptyLines(1);
     // bytes += generator.row([
@@ -321,25 +393,26 @@ class PrintController extends GetxController {
     // ]);
 
     bytes += generator.emptyLines(1);
-    bytes +=  generator.qrcode('example.com');
+    bytes += generator.qrcode('example.com');
     // const String base64String = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASIAAAEiAQMAAABncE31AAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABVklEQVRoge3Yyw3DIAwGYEsZICOxOiMxQCQ3+IEhUnvCufT3IW3I15NrO0CEQPxlnGxR72+6VPgiX72gEpV9cnWgqi5PoZKUJOKxLAm7L1CvqPOyZ3YL9Z7qd6WRVwfUG8rKgQ5WJb+sy1OoFBUTOUrk19yG2qam6Bnyifw9oHYq70L9clPmdrD+aFQHVIbqn6VJcqwcbkVeIo2g8pRT7UI6FXqa6jOPUPuVz+ExjG3329MUGYJKUP28YRTG9I18NkOlqaDSnppMBXJFBJWnJAfyOtpsKyCz2XLVoBLVWI6USK5IX46gEpU/sy4UCWOf0lBZKuK0qWA7MO1WTwS1UcXJA/nRzxjGU3VAZSj7/2t1FJ5LZM0eVILSLlRjDHhngnpLje2uvo7y0pmgUpUeu/lErt6eoDKVhE6FsfHVtfmdCWq/Yovq52y675ISiQxBJSgE4u/iAw0LD+J69uwvAAAAAElFTkSuQmCC";
     // final List<int> qrByte = base64.decode(base64String);
     // bytes += generator.qrcode(base64String,align: PosAlign.center,size: QRSize.Size4);
     bytes += generator.hr(ch: '-', len: 32, linesAfter: 1);
     bytes += generator.text('No refund or exchange',
-        styles: const PosStyles(align: PosAlign.center,bold: true));
+        styles: const PosStyles(align: PosAlign.center, bold: true));
     bytes += generator.emptyLines(1);
     bytes += generator.text('Technology Partner www.cinesync.io',
-        styles: const PosStyles(align: PosAlign.center,bold: true));
-    _printEscPos(bytes, generator);
+        styles: const PosStyles(align: PosAlign.center, bold: true));
+    return PrintData(generator, bytes);
   }
 
   /// print ticket
-  void _printEscPos(List<int> bytes, Generator generator) async {
+   printEscPos(PrintData data,PrinterModel device) async {
+    var generator = data.generator;
+    var bytes = data.bytes;
     var connectedTCP = false;
     if (selectedPrinter == null) return;
-    var bluetoothPrinter = selectedPrinter.value;
-
+    var bluetoothPrinter = device;
     switch (bluetoothPrinter?.typePrinter) {
       case PrinterType.usb:
         bytes += generator.feed(2);
@@ -374,62 +447,30 @@ class PrintController extends GetxController {
         break;
       default:
     }
-    if (bluetoothPrinter?.typePrinter == PrinterType.bluetooth &&
+    if (bluetoothPrinter.typePrinter == PrinterType.bluetooth &&
         Platform.isAndroid) {
       if (_currentStatus == BTStatus.connected) {
-        printerManager.send(type: bluetoothPrinter!.typePrinter, bytes: bytes);
+        printerManager.send(type: bluetoothPrinter.typePrinter, bytes: bytes);
         pendingTask = null;
       }
     } else {
-      printerManager.send(type: bluetoothPrinter!.typePrinter, bytes: bytes);
+      printerManager.send(type: bluetoothPrinter.typePrinter, bytes: bytes);
       if (bluetoothPrinter.typePrinter == PrinterType.network) {
         printerManager.disconnect(type: bluetoothPrinter.typePrinter);
       }
     }
   }
 
-  // conectar dispositivo
-  connectDevice() async {
-    isConnected.value = false;
-    if (selectedPrinter == null) return;
-    switch (selectedPrinter.value?.typePrinter) {
-      case PrinterType.usb:
-        await printerManager.connect(
-            type: selectedPrinter.value!.typePrinter,
-            model: UsbPrinterInput(
-                name: selectedPrinter.value!.deviceName,
-                productId: selectedPrinter.value!.productId,
-                vendorId: selectedPrinter.value!.vendorId));
-        isConnected.value = true;
-        break;
-      case PrinterType.bluetooth:
-        await printerManager.connect(
-            type: selectedPrinter.value!.typePrinter,
-            model: BluetoothPrinterInput(
-                name: selectedPrinter.value!.deviceName,
-                address: selectedPrinter.value!.address!,
-                isBle:selectedPrinter.value!.isBle ?? false,
-                autoConnect: reconnect.value));
-        break;
-      case PrinterType.network:
-        await printerManager.connect(
-            type: selectedPrinter.value!.typePrinter,
-            model: TcpPrinterInput(ipAddress: selectedPrinter.value!.address!));
-        isConnected.value = true;
-        break;
-      default:
-    }
+  printTicketOnMultiDevice (String key) async {
+
+   for (var value in selectedPrinterMap) {
+     if(value.key == key){
+       debugPrint('value.key ${value.key}');
+       PrintData printData  = await printReceiveTest();
+       if(value.printer == null) continue;
+       printEscPos(printData, value.printer!);
+     }
+   }
   }
-
-  void mapPrinterToKey(String key,PrinterModel printer){
-    selectedPrinterMap.add(PrintMapModel(
-      key: key,
-      printer: printer
-    ));
-    refresh();
-    update();
-  }
-
-
 
 }

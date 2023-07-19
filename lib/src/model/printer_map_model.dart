@@ -16,7 +16,7 @@ class PrintMapModel {
     this.key,
     this.deviceName,
     this.isConnected,
-    this.status,
+    this.status = "Disconnected",
     this.printer,
   });
 
