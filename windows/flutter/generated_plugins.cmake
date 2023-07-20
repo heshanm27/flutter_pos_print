@@ -3,9 +3,14 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  bitsdojo_window_windows
   flutter_pos_printer_platform
   network_info_plus
+  permission_handler_windows
   printing
+  screen_retriever
+  system_tray
+  window_manager
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_pos_printer_platform/esc_pos_utils_platform/src/pos_styl
 import 'package:flutter_pos_printer_platform/flutter_pos_printer_platform.dart';
 import 'package:flutter_print/src/model/printer_model.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../model/print_data.dart';
 import '../model/printer_map_model.dart';
 
@@ -31,6 +33,8 @@ class PrintController extends GetxController {
   @override
   void onInit() {
     if (Platform.isWindows) defaultPrinterType = PrinterType.usb;
+    if(Platform.isAndroid) defaultPrinterType = PrinterType.bluetooth;
+    if(Platform.isAndroid) isBle.value = true;
     super.onInit();
     scan();
 
@@ -54,6 +58,7 @@ class PrintController extends GetxController {
       }
     });
 
+
     //  PrinterManager.instance.stateUSB is only supports on Android
     subscriptionUsbStatus = PrinterManager.instance.stateUSB.listen((status) {
       _currentUsbStatus = status;
@@ -68,7 +73,15 @@ class PrintController extends GetxController {
       }
     });
   }
-
+ @override
+  void onReady() {
+    // TODO: implement onReady
+    super.onReady();
+    everAll([reconnect,isBle], (callback){
+      debugPrint('reconnect: $reconnect');
+      debugPrint('isBle: $isBle');
+      scan();});
+  }
   @override
   void onClose() {
     // Cancel the subscriptions to avoid memory leaks
@@ -78,11 +91,16 @@ class PrintController extends GetxController {
     super.onClose();
   }
 
+  //Scan devices according to the default printer type
   void scan() {
     devices.clear();
+    print('defaultPrinterType: $defaultPrinterType');
+
     subscription = printerManager
         .discovery(type: defaultPrinterType, isBle: isBle.value)
         .listen((device) {
+
+          print('device: ${device.name}');
       devices.add(PrinterModel(
         deviceName: device.name,
         address: device.address,
@@ -92,28 +110,15 @@ class PrintController extends GetxController {
         typePrinter: defaultPrinterType,
       ));
 
-      // if (device.isDefault == true) {
-      //   PrinterModel _model = PrinterModel(
-      //     deviceName: device.name,
-      //     address: device.address,
-      //     isBle: isBle.value,
-      //     vendorId: device.vendorId,
-      //     productId: device.productId,
-      //     typePrinter: defaultPrinterType,
-      //   );
-      //   selectedPrinter.value = _model;
-      //   selectedPrinterMap.add(PrintMapModel(
-      //     key: "Invoice",
-      //     printer: _model,
-      //     deviceName: device.name,
-      //     isConnected: false,
-      //     status: 'Disconnected',
-      //   ));
-      //   update();
-      //   refresh();
-      // }
     });
   }
+
+  void refreshScan(PrinterType type) {
+    defaultPrinterType = type;
+    scan();
+  }
+
+
   // void setPort(String value) {
   //   if (value.isEmpty) value = '9100';
   //   _port = value;
@@ -141,6 +146,8 @@ class PrintController extends GetxController {
 
   }
 
+
+
   void selectDevice(PrinterModel device) async {
     if (selectedPrinter != null) {
       if ((device.address != selectedPrinter.value!.address) ||
@@ -154,6 +161,7 @@ class PrintController extends GetxController {
     selectedPrinter.value = device;
   }
 
+  //map printer to key
   void mapPrinterToKey(String key, PrinterModel printer) {
     selectedPrinterMap.add(PrintMapModel(key: key, printer: printer,deviceName: printer.deviceName,isConnected: true,status: 'Connected'));
     refresh();
@@ -161,6 +169,7 @@ class PrintController extends GetxController {
     // connectMapDeviceTo();
   }
 
+  //connect printers
   void connectMapDeviceTo() {
     for (var element in selectedPrinterMap) {
       if (element.printer == null) continue;
@@ -175,6 +184,7 @@ class PrintController extends GetxController {
     }
   }
 
+  //connect one printer
   void connectOneDevice(PrintMapModel element) {
     debugPrint('element: ${element.status}');
     changePrinterStatus(element, 'Connecting');
@@ -191,6 +201,7 @@ class PrintController extends GetxController {
 
   }
 
+  //change status of printer
   void changePrinterStatus(PrintMapModel device,String status) {
     if (device.printer == null) return;
     for (var element in selectedPrinterMap) {
@@ -200,12 +211,26 @@ class PrintController extends GetxController {
     }
   }
 
+  void addTcpIpPrinter(String key,String address,String port){
+    PrinterModel printer = PrinterModel(
+      deviceName: address,
+      address: address,
+      port: port,
+      typePrinter: PrinterType.network,
+      state: false,
+    );
+    mapPrinterToKey(key, printer);
+  }
+
+  //remove printer from map
   void removeMapPrinter(PrintMapModel mapModel) {
     selectedPrinterMap.remove(mapModel);
     refresh();
     update();
   }
 
+
+  //execute print command
   void printCommand(PrintMapModel model) async{
     changePrinterStatus(model, 'Printing');
     if(model.isConnected == false){
@@ -223,6 +248,7 @@ class PrintController extends GetxController {
 
 
   Future<bool> connectDevice(PrinterModel device) async {
+
     switch (device.typePrinter) {
       case PrinterType.usb:
         return await printerManager.connect(
@@ -461,8 +487,8 @@ class PrintController extends GetxController {
     }
   }
 
+  //print ticket on multi device
   printTicketOnMultiDevice (String key) async {
-
    for (var value in selectedPrinterMap) {
      if(value.key == key){
        debugPrint('value.key ${value.key}');
@@ -472,5 +498,24 @@ class PrintController extends GetxController {
      }
    }
   }
+
+  Future<void> saveSelectedPrinterMapToSharedPreferences(List<PrintMapModel> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonData = json.encode(data.toList());
+    debugPrint('jsonData: $jsonData');
+    await prefs.setString('selected_printer_map_data', jsonData);
+  }
+
+  Future<List<PrintMapModel>> getSelectedPrinterMapFromSharedPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonData = prefs.getString('selected_printer_map_data');
+    if (jsonData != null) {
+      final data = json.decode(jsonData) as List<dynamic>;
+      final list = data.map((item) => PrintMapModel.fromJson(item)).toList();
+      return list;
+    }
+    return [];
+  }
+
 
 }

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_print/src/controller/print_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
-
 import 'components/printerDialog.dart';
+import 'model/printer_map_model.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -14,6 +14,7 @@ class HomeScreen extends StatelessWidget {
     GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final ipController = TextEditingController();
     final portController = TextEditingController(text: "9001");
+    final printerKeyController = TextEditingController();
     return Scaffold(
       body: SafeArea(
         child: Container(
@@ -43,6 +44,32 @@ class HomeScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               const Text("TCP/IP Printer"),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Flexible(
+                                      flex: 2, child: Text("Printer Map Key: ")),
+                                  const SizedBox(
+                                    width: 10,
+                                  ),
+                                  Flexible(
+                                    flex: 2,
+                                    child: TextFormField(
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter Printer Map Key';
+                                        }
+                                        return null;
+                                      },
+                                      decoration: const InputDecoration(
+                                        hintText: 'Enter Printer Map Key',
+                                      ),
+                                      controller: printerKeyController,
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -101,9 +128,10 @@ class HomeScreen extends StatelessWidget {
                               ElevatedButton(
                                   onPressed: () {
                                     if (formKey.currentState!.validate()) {
-                                      // printController.connectPrinter(
-                                      //     ipController.text,
-                                      //     int.parse(portController.text));
+                                      printController.addTcpIpPrinter(
+                                          printerKeyController.text,
+                                          ipController.text,
+                                          portController.text);
                                     }
                                   },
                                   child: const Text("Connect"))
@@ -171,69 +199,87 @@ class HomeScreen extends StatelessWidget {
                               });
                         },
                         child: const Text("Add Printer")),
+                    const SizedBox(
+                      width: 10,
+                    ),
                     ElevatedButton(onPressed: (){
-                      printController.printTicketOnMultiDevice("gg");
-                    }, child: const Text("Print multi Test"))
+                      printController.printTicketOnMultiDevice("invoice");
+                    }, child: const Text("Print multi Test")),
+                    // ElevatedButton(onPressed: (){
+                    //   printController.saveSelectedPrinterMapToSharedPreferences(printController.selectedPrinterMap.value);
+                    // }, child: const Text("Save List ")),
+                    // ElevatedButton(onPressed: () async{
+                    //   List<PrintMapModel> list = await printController.getSelectedPrinterMapFromSharedPreferences();
+                    //   list.forEach((element) {
+                    //     print(element.deviceName);
+                    //   });
+                    // }, child: const Text("Get List"))
                   ],
                 ),
                 const SizedBox(
                   height: 30,
                 ),
                 Obx(
-                  () => DataTable(
-                      columns: const [
-                        DataColumn(label: Text("Printer Name")),
-                        DataColumn(label: Text("Printer Key")),
-                        DataColumn(label: Text("Device Status")),
-                        DataColumn(label: Text("Device Action")),
-                        DataColumn(label: Text("Action")),
-                      ],
-                      rows: printController.selectedPrinterMap.value
-                          .map((e) => DataRow(cells: [
-                                DataCell(Text(e.key ?? ""), onTap: () {
-                                  printController.selectedPrinterMap.value
-                                      .remove(e);
-                                }),
-                                DataCell(
-                                  Text(e.printer?.deviceName ?? ""),
-                                ),
-                                DataCell(
-                                  e.status == "Connecting"
-                                      ? const SpinKitThreeBounce(
-                                          color: Colors.grey,
-                                          size: 12,
-                                        )
-                                      : Text(e.status ?? ""),
-                                ),
-                                DataCell(ElevatedButton(
-                                    onPressed: () {
-                                      printController.printCommand(e);
-                                    },
-                                    child: const Text("Print Test"))),
-                                DataCell(SingleChildScrollView(
-                                  child: Row(
-                                    children: [
-                                      IconButton(
-                                          onPressed: () {
-                                            printController.connectOneDevice(e);
-                                          },
-                                          splashRadius: 10,
-                                          icon: const Icon(
-                                            Icons.refresh,
-                                          )),
-                                      IconButton(
-                                          onPressed: () {
-                                            printController.removeMapPrinter(e);
-                                          },
-                                          splashRadius: 10,
-                                          icon: const Icon(
-                                            Icons.delete,
-                                          )),
-                                    ],
-                                  ),
-                                )),
-                              ]))
-                          .toList()),
+                  () => SingleChildScrollView(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                          columns: const [
+                            DataColumn(label: Text("Printer Key")),
+                            DataColumn(label: Text("Device Name")),
+                            DataColumn(label: Text("Device Status")),
+                            DataColumn(label: Text("Device Action")),
+                            DataColumn(label: Text("Action")),
+                          ],
+                          rows: printController.selectedPrinterMap.value
+                              .map((e) => DataRow(cells: [
+                                    DataCell(Text(e.key ?? ""), onTap: () {
+                                      printController.selectedPrinterMap.value
+                                          .remove(e);
+                                    }),
+                                    DataCell(
+
+                                      Text(e.printer?.deviceName ?? "",maxLines: 1,overflow: TextOverflow.ellipsis,),
+                                    ),
+                                    DataCell(
+                                      e.status == "Connecting"
+                                          ? const SpinKitThreeBounce(
+                                              color: Colors.grey,
+                                              size: 12,
+                                            )
+                                          : Text(e.status ?? ""),
+                                    ),
+                                    DataCell(ElevatedButton(
+                                        onPressed: () {
+                                          printController.printCommand(e);
+                                        },
+                                        child: const Text("Test"))),
+                                    DataCell(SingleChildScrollView(
+                                      child: Row(
+                                        children: [
+                                          IconButton(
+                                              onPressed: () {
+                                                printController.connectOneDevice(e);
+                                              },
+                                              splashRadius: 10,
+                                              icon: const Icon(
+                                                Icons.refresh,
+                                              )),
+                                          IconButton(
+                                              onPressed: () {
+                                                printController.removeMapPrinter(e);
+                                              },
+                                              splashRadius: 10,
+                                              icon: const Icon(
+                                                Icons.delete,
+                                              )),
+                                        ],
+                                      ),
+                                    )),
+                                  ]))
+                              .toList()),
+                    ),
+                  ),
                 ),
               ],
             ),
