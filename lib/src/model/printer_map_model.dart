@@ -7,12 +7,14 @@ PrintMapModel printMapModelFromJson(String str) => PrintMapModel.fromJson(json.d
 String printMapModelToJson(PrintMapModel data) => json.encode(data.toJson());
 
 class PrintMapModel {
+  int mapId;
   String? key;
   String? deviceName;
   bool? isConnected;
   String? status;
   PrinterModel? printer;
   PrintMapModel({
+    required this.mapId,
     this.key,
     this.deviceName,
     this.isConnected,
@@ -25,6 +27,8 @@ class PrintMapModel {
     deviceName: json["deviceName"],
     isConnected: json["isConnected"],
     status: json["status"],
+    mapId: json['mapId'],
+    printer: json['printer'] != null ? PrinterModel.fromJson(json['printer']) : null,
   );
 
   Map<String, dynamic> toJson() => {
@@ -32,5 +36,7 @@ class PrintMapModel {
     "deviceName": deviceName,
     "isConnected": isConnected,
     "status": status,
+    "mapId": mapId,
+    "printer": printer?.toJson(),
   };
 }

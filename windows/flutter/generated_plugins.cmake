@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   bitsdojo_window_windows
   flutter_pos_printer_platform
+  flutter_window_close
   network_info_plus
   permission_handler_windows
   printing

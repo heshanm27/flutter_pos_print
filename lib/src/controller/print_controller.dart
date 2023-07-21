@@ -11,6 +11,7 @@ import 'package:flutter_pos_printer_platform/flutter_pos_printer_platform.dart';
 import 'package:flutter_print/src/model/printer_model.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web_socket_channel/io.dart';
 import '../model/print_data.dart';
 import '../model/printer_map_model.dart';
 
@@ -94,13 +95,9 @@ class PrintController extends GetxController {
   //Scan devices according to the default printer type
   void scan() {
     devices.clear();
-    print('defaultPrinterType: $defaultPrinterType');
-
     subscription = printerManager
         .discovery(type: defaultPrinterType, isBle: isBle.value)
         .listen((device) {
-
-          print('device: ${device.name}');
       devices.add(PrinterModel(
         deviceName: device.name,
         address: device.address,
@@ -163,7 +160,9 @@ class PrintController extends GetxController {
 
   //map printer to key
   void mapPrinterToKey(String key, PrinterModel printer) {
-    selectedPrinterMap.add(PrintMapModel(key: key, printer: printer,deviceName: printer.deviceName,isConnected: true,status: 'Connected'));
+    selectedPrinterMap.add(PrintMapModel(
+        mapId:selectedPrinterMap.length ,
+        key: key, printer: printer,deviceName: printer.deviceName,isConnected: true,status: 'Connected'));
     refresh();
     update();
     // connectMapDeviceTo();
@@ -186,7 +185,6 @@ class PrintController extends GetxController {
 
   //connect one printer
   void connectOneDevice(PrintMapModel element) {
-    debugPrint('element: ${element.status}');
     changePrinterStatus(element, 'Connecting');
     connectDevice(element.printer!).then((value) {
       if (value == true) {
@@ -205,7 +203,7 @@ class PrintController extends GetxController {
   void changePrinterStatus(PrintMapModel device,String status) {
     if (device.printer == null) return;
     for (var element in selectedPrinterMap) {
-      if(element.key == device.key){
+      if(element.mapId == device.mapId){
         element.status = status;
       }
     }
@@ -501,7 +499,14 @@ class PrintController extends GetxController {
 
   Future<void> saveSelectedPrinterMapToSharedPreferences(List<PrintMapModel> data) async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonData = json.encode(data.toList());
+
+    List<Map<String, dynamic>> list = [];
+
+    for (var value in data) {
+      list.add(value.toJson());
+    }
+
+    final jsonData = json.encode(list);
     debugPrint('jsonData: $jsonData');
     await prefs.setString('selected_printer_map_data', jsonData);
   }
@@ -509,13 +514,22 @@ class PrintController extends GetxController {
   Future<List<PrintMapModel>> getSelectedPrinterMapFromSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonData = prefs.getString('selected_printer_map_data');
+    debugPrint('jsonData: $jsonData');
     if (jsonData != null) {
-      final data = json.decode(jsonData) as List<dynamic>;
-      final list = data.map((item) => PrintMapModel.fromJson(item)).toList();
-      return list;
+      List<dynamic> data = json.decode(jsonData);
+      debugPrint('data: $data');
+      List<PrintMapModel> testMap = [];
+      for (var element in data) {
+        testMap.add(PrintMapModel.fromJson(element));
+      }
+      selectedPrinterMap.value = testMap;
+      selectedPrinterMap.refresh();
+      update();
     }
     return [];
   }
+
+
 
 
 }

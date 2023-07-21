@@ -1,40 +1,76 @@
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_print/src/controller/print_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'components/printerDialog.dart';
-import 'model/printer_map_model.dart';
+import 'components/window_buttons.dart';
+import 'controller/websocket_controller.dart';
 
-class HomeScreen extends StatelessWidget {
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  PrintController printController = Get.find<PrintController>();
+   WebSocketController webSocketController = Get.find<WebSocketController>();
+  GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  GlobalKey<FormState> socketFormKey = GlobalKey<FormState>();
+  final ipController = TextEditingController();
+  final portController = TextEditingController(text: "9001");
+  final printerKeyController = TextEditingController();
+  final webSocketUrlController = TextEditingController();
+  final timeOutController = TextEditingController(text: "30");
+
+  @override
+  void dispose() {
+    ipController.dispose();
+    portController.dispose();
+    printerKeyController.dispose();
+    webSocketUrlController.dispose();
+    timeOutController.dispose();
+    super.dispose();
+
+  }
+  @override
   Widget build(BuildContext context) {
-    PrintController printController = Get.find<PrintController>();
-    GlobalKey<FormState> formKey = GlobalKey<FormState>();
-    final ipController = TextEditingController();
-    final portController = TextEditingController(text: "9001");
-    final printerKeyController = TextEditingController();
     return Scaffold(
       body: SafeArea(
-        child: Container(
+        child: SizedBox(
           width: double.infinity,
           height: double.infinity,
-          padding: const EdgeInsets.all(12),
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
+                Container(
+                  color: Colors.grey[200],
+                  child: WindowTitleBarBox(
+                    child: Row(
+                      children: [
+                        Expanded(child: WindowTitleBarBox(
+                            child: MoveWindow(
+                              child: const Padding(
+                                padding: EdgeInsets.all(4.0),
+                                child: Text("CineSync Printer Manager",textAlign: TextAlign.center,),
+                              ),
+                            ))),
+                        const WindowButtons(),
+                      ],
+                    ),
+                  ),
+                ),
                 Row(
                   children: [
                     Expanded(
                       flex: 2,
                       child: Container(
                         decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.black12,
-                            width: 2,
-                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.all(12),
@@ -143,41 +179,93 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(
                       width: 50,
                     ),
-                    Expanded(
-                      flex: 2,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.black12,
-                            width: 2,
+                    Obx(
+                      ()=> Expanded(
+                        flex: 2,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: Form(
-                          child: Column(
-                            children: [
-                              const Text("WebSocket Connect"),
-                              Row(
-                                children: [
-                                  const Text("URL: "),
-                                  Flexible(
-                                    child: TextFormField(
-                                      decoration: const InputDecoration(
-                                        hintText: 'Enter Web Socket Url',
+                          padding: const EdgeInsets.all(12),
+                          child: Form(
+                            key: socketFormKey,
+                            child: Column(
+                              children: [
+                                const Text("WebSocket Connect"),
+                                Row(
+                                  children: [
+                                    const Text("URL: "),
+                                    Flexible(
+                                      child: TextFormField(
+                                        enabled: !webSocketController.isConnected.value,
+                                        controller: webSocketUrlController,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter web socket url';
+                                          }
+                                          return null;
+                                        },
+                                        decoration: const InputDecoration(
+                                          hintText: 'Enter Web Socket Url',
+                                        ),
+                                        maxLines: 1,
                                       ),
-                                      maxLines: 1,
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(
-                                height: 30,
-                              ),
-                              ElevatedButton(
-                                  onPressed: () {},
-                                  child: const Text("Connect"))
-                            ],
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    const Text("Time Out(seconds): "),
+                                    Flexible(
+                                      child: TextFormField(
+                                        enabled: !webSocketController.isConnected.value,
+                                        controller: timeOutController,
+                                        keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: false),
+                                        inputFormatters: <TextInputFormatter>[
+                                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                                        ],
+                                        decoration: const InputDecoration(
+                                          hintText: 'Enter Time Out',
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(
+                                  height: 30,
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    webSocketController.isConnecting.value == true  ? const CircularProgressIndicator() : Visibility(
+                                      visible: !webSocketController.isConnected.value,
+                                      child: ElevatedButton(
+                                          onPressed: () {
+                                            if(socketFormKey.currentState!.validate()) {
+                                              webSocketController
+                                                  .webSocketConnect(webSocketUrlController.text, int.parse(timeOutController.text) );
+                                            }
+                                          },
+                                          child: const Text("Connect")),
+                                    ),
+                                    const SizedBox(
+                                      width: 10,),
+                                       Visibility(
+                                      visible: webSocketController.isConnected.value,
+                                      child: ElevatedButton(
+                                          onPressed: () {
+                                            if(socketFormKey.currentState!.validate()) {
+                                              webSocketController
+                                                  .disconnect();
+                                            }
+                                          },
+                                          child: const Text("Disconnect")),
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -187,100 +275,104 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(
                   height: 30,
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return const PrinterDialog();
-                              });
-                        },
-                        child: const Text("Add Printer")),
-                    const SizedBox(
-                      width: 10,
-                    ),
-                    ElevatedButton(onPressed: (){
-                      printController.printTicketOnMultiDevice("invoice");
-                    }, child: const Text("Print multi Test")),
-                    // ElevatedButton(onPressed: (){
-                    //   printController.saveSelectedPrinterMapToSharedPreferences(printController.selectedPrinterMap.value);
-                    // }, child: const Text("Save List ")),
-                    // ElevatedButton(onPressed: () async{
-                    //   List<PrintMapModel> list = await printController.getSelectedPrinterMapFromSharedPreferences();
-                    //   list.forEach((element) {
-                    //     print(element.deviceName);
-                    //   });
-                    // }, child: const Text("Get List"))
-                  ],
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton(
+                          onPressed: () {
+                            showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return const PrinterDialog();
+                                });
+                          },
+                          child: const Text("Add Printer")),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      ElevatedButton(onPressed: (){
+                        printController.printTicketOnMultiDevice("invoice");
+                      }, child: const Text("Print multi Test")),
+                      ElevatedButton(onPressed: (){
+                        printController.saveSelectedPrinterMapToSharedPreferences(printController.selectedPrinterMap.value);
+                      }, child: const Text("Save List ")),
+                      ElevatedButton(onPressed: () async{
+                     await printController.getSelectedPrinterMapFromSharedPreferences();
+                        // list.forEach((element) {
+                        //   print(element.deviceName);
+                        // });
+                      }, child: const Text("Get List"))
+                    ],
+                  ),
                 ),
                 const SizedBox(
                   height: 30,
                 ),
                 Obx(
-                  () => SingleChildScrollView(
+                      () => SingleChildScrollView(
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text("Printer Key")),
-                            DataColumn(label: Text("Device Name")),
-                            DataColumn(label: Text("Device Status")),
-                            DataColumn(label: Text("Device Action")),
-                            DataColumn(label: Text("Action")),
-                          ],
-                          rows: printController.selectedPrinterMap.value
-                              .map((e) => DataRow(cells: [
-                                    DataCell(Text(e.key ?? ""), onTap: () {
-                                      printController.selectedPrinterMap.value
-                                          .remove(e);
-                                    }),
-                                    DataCell(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: DataTable(
+                            columns: const [
+                              DataColumn(label: Text("Printer Key")),
+                              DataColumn(label: Text("Device Name")),
+                              DataColumn(label: Text("Device Status")),
+                              DataColumn(label: Text("Action")),
+                            ],
+                            rows: printController.selectedPrinterMap.value
+                                .map((e) => DataRow(cells: [
+                              DataCell(Text(e.key ?? ""), onTap: () {
+                                printController.selectedPrinterMap.value
+                                    .remove(e);
+                              }),
+                              DataCell(
 
-                                      Text(e.printer?.deviceName ?? "",maxLines: 1,overflow: TextOverflow.ellipsis,),
-                                    ),
-                                    DataCell(
-                                      e.status == "Connecting"
-                                          ? const SpinKitThreeBounce(
-                                              color: Colors.grey,
-                                              size: 12,
-                                            )
-                                          : Text(e.status ?? ""),
-                                    ),
-                                    DataCell(ElevatedButton(
+                                Text(e.printer?.deviceName ?? "",maxLines: 1,overflow: TextOverflow.ellipsis,),
+                              ),
+                              DataCell(
+                                e.status == "Connecting"
+                                    ? const SpinKitThreeBounce(
+                                  color: Colors.grey,
+                                  size: 12,
+                                )
+                                    : Text(e.status ?? ""),
+                              ),
+                              DataCell(SingleChildScrollView(
+                                child: Row(
+                                  children: [
+                                    IconButton(onPressed: (){
+                                      printController.printCommand(e);
+                                    }, splashRadius: 10, icon: const Icon(Icons.print)),
+                                    IconButton(
                                         onPressed: () {
-                                          printController.printCommand(e);
+                                          printController.connectOneDevice(e);
                                         },
-                                        child: const Text("Test"))),
-                                    DataCell(SingleChildScrollView(
-                                      child: Row(
-                                        children: [
-                                          IconButton(
-                                              onPressed: () {
-                                                printController.connectOneDevice(e);
-                                              },
-                                              splashRadius: 10,
-                                              icon: const Icon(
-                                                Icons.refresh,
-                                              )),
-                                          IconButton(
-                                              onPressed: () {
-                                                printController.removeMapPrinter(e);
-                                              },
-                                              splashRadius: 10,
-                                              icon: const Icon(
-                                                Icons.delete,
-                                              )),
-                                        ],
-                                      ),
-                                    )),
-                                  ]))
-                              .toList()),
+                                        splashRadius: 10,
+                                        icon: const Icon(
+                                          Icons.refresh,
+                                        )),
+                                    IconButton(
+                                        onPressed: () {
+                                          printController.removeMapPrinter(e);
+                                        },
+                                        splashRadius: 10,
+                                        icon: const Icon(
+                                          Icons.delete,
+                                        )),
+                                  ],
+                                ),
+                              )),
+                            ]))
+                                .toList()),
+                      ),
                     ),
                   ),
-                ),
+                )
+
               ],
             ),
           ),
