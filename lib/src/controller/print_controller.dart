@@ -11,9 +11,12 @@ import 'package:flutter_pos_printer_platform/flutter_pos_printer_platform.dart';
 import 'package:flutter_print/src/model/printer_model.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:web_socket_channel/io.dart';
 import '../model/print_data.dart';
 import '../model/printer_map_model.dart';
+import '../model/websocket_model.dart';
+import '../model/websocket_response_model.dart';
+import 'image_controller.dart';
+import 'package:image/image.dart' as img;
 
 class PrintController extends GetxController {
   var defaultPrinterType = PrinterType.usb;
@@ -77,7 +80,6 @@ class PrintController extends GetxController {
 
   @override
   void onReady() {
-    // TODO: implement onReady
     super.onReady();
     everAll([reconnect, isBle], (callback) {
       debugPrint('reconnect: $reconnect');
@@ -118,31 +120,7 @@ class PrintController extends GetxController {
     scan();
   }
 
-  // void setPort(String value) {
-  //   if (value.isEmpty) value = '9100';
-  //   _port = value;
-  //   var device = PrinterModel(
-  //     deviceName: value,
-  //     address: _ipAddress,
-  //     port: _port,
-  //     typePrinter: PrinterType.network,
-  //     state: false,
-  //   );
-  //   selectDevice(device);
-  // }
-  // void setIpAddress(String value) {
-  //   _ipAddress = value;
-  //   var device = PrinterModel(
-  //     deviceName: value,
-  //     address: _ipAddress,
-  //     port: _port,
-  //     typePrinter: PrinterType.network,
-  //     state: false,
-  //   );
-  //   selectDevice(device);
-  // }
-  void setNetWorkPrinter(String port, String address) {}
-
+  //Select device
   void selectDevice(PrinterModel device) async {
     if (selectedPrinter != null) {
       if ((device.address != selectedPrinter.value!.address) ||
@@ -211,6 +189,7 @@ class PrintController extends GetxController {
     }
   }
 
+  //add TcpIp printer
   void addTcpIpPrinter(String key, String address, String port) {
     PrinterModel printer = PrinterModel(
       deviceName: address,
@@ -229,97 +208,14 @@ class PrintController extends GetxController {
     update();
   }
 
-  //execute print command
-  void printCommand(PrintMapModel model) async {
-    changePrinterStatus(model, 'Printing');
-    if (model.isConnected == false) {
-      Get.snackbar('Error', 'Printer is not connected');
-      return;
-    }
-    PrintData printData = await printReceiveTest();
-    if (printData == null) {
-      Get.snackbar('Error', 'Print data is null');
-      return;
-    }
-    await printEscPos(printData, model.printer!);
-    changePrinterStatus(model, 'Connected');
-  }
-
-  Future<bool> connectDevice(PrinterModel device) async {
-    switch (device.typePrinter) {
-      case PrinterType.usb:
-        return await printerManager.connect(
-            type: device.typePrinter,
-            model: UsbPrinterInput(
-                name: device.deviceName,
-                productId: device.productId,
-                vendorId: device.vendorId));
-      case PrinterType.bluetooth:
-        return await printerManager.connect(
-            type: device.typePrinter,
-            model: BluetoothPrinterInput(
-                name: device.deviceName,
-                address: device.address!,
-                isBle: device.isBle ?? false,
-                autoConnect: reconnect.value));
-
-      case PrinterType.network:
-        return await printerManager.connect(
-            type: device.typePrinter,
-            model: TcpPrinterInput(ipAddress: device.address!));
-      default:
-        return false;
-    }
-  }
-
+  //test Print
   Future<PrintData> printReceiveTest() async {
     List<int> bytes = [];
 
-    // // Xprinter XP-N160I
-    // final profile = await CapabilityProfile.load(name: 'XP-N160I');
     // default profile
     final profile = await CapabilityProfile.load();
     // PaperSize.mm80 or PaperSize.mm58
     final generator = Generator(PaperSize.mm80, profile);
-    // bytes += generator.setGlobalCodeTable('CP1250');
-    // final String imageUrl = 'https://cinesync-dev.s3.amazonaws.com/report/images/theater/cinema/cinesync_logo-200h.png';
-    //
-    // final response = await http.get(Uri.parse("imageUrl"));
-    // if (response.statusCode == 200) {
-    //   final Uint8List imageBytes = response.bodyBytes;
-    //   final decodedImage = img.decodeImage(imageBytes)!;
-    //
-    //   final tempDir = await getTemporaryDirectory();
-    //   final tempPath = "${tempDir.path}/temp_image.jpg";
-    //   File(tempPath).writeAsBytesSync(img.encodeJpg(decodedImage));
-
-    final ByteData data = await rootBundle.load("assets/Picture1.png");
-    // if (data.lengthInBytes > 0) {
-    //   final Uint8List imageBytes = data.buffer.asUint8List();
-    //   // decode the bytes into an image
-    //   final decodedImage = img.decodeImage(imageBytes)!;
-    //   // Create a black bottom layer
-    //   // Resize the image to a 130x? thumbnail (maintaining the aspect ratio).
-    //   img.Image thumbnail = img.copyResize(decodedImage, height: 130);
-    //   // // creates a copy of the original image with set dimensions
-    //   img.Image originalImg =
-    //   img.copyResize(decodedImage, width: 300, height: 100);
-    //   // // fills the original image with a white background
-    //   // img.fill(originalImg, color: img.ColorRgb8(255, 255, 255));
-    //   // var padding = (originalImg.width - thumbnail.width) / 2;
-    //
-    //   // //insert the image inside the frame and center it
-    //   // drawImage(originalImg, thumbnail, dstX: padding.toInt());
-    //
-    //   // convert image to grayscale
-    //   var grayscaleImage = img.grayscale(originalImg);
-    //
-    //   bytes += generator.feed(1);
-    //   //bytes += generator.imageRaster(img.decodeImage(imageBytes)!, align: PosAlign.center);
-    //   bytes += generator.imageRaster(grayscaleImage, align: PosAlign.center);
-    //   bytes += generator.feed(1);
-    // }
-
     bytes += generator.setStyles(const PosStyles(
         align: PosAlign.center,
         height: PosTextSize.size1,
@@ -352,72 +248,103 @@ class PrintController extends GetxController {
     bytes += generator.textLeftRight("Seat No", "D10");
     bytes += generator.textLeftRight("Type ", "Students");
 
-    // bytes += generator.emptyLines(1);
-    // bytes += generator.row([
-    //   PosColumn(
-    //       width: 8,
-    //       text: 'Screen',
-    //       styles: const PosStyles(align: PosAlign.center, bold: true),
-    //       ),
-    //   PosColumn(
-    //       width: 4,
-    //       text: ': Room premium',
-    //       styles: const PosStyles(align: PosAlign.left, bold: true),
-    //      ),
-    // ]);
-    // bytes += generator.row([
-    //   PosColumn(
-    //       width: 6,
-    //       text: 'Show Date',
-    //       styles: const PosStyles(align: PosAlign.right, bold: true),
-    //      ),
-    //   PosColumn(
-    //       width: 6,
-    //       text: ' : 10/07/2023',
-    //       styles: const PosStyles(align: PosAlign.left, bold: true),
-    //       ),
-    // ]);
-    // bytes += generator.row([
-    //   PosColumn(
-    //       width: 6,
-    //       text: 'Show Time',
-    //     styles: const PosStyles(align: PosAlign.right, bold: true),
-    //       ),
-    //   PosColumn(
-    //       width: 6,
-    //       text: ': 14:01 ',
-    //     styles: const PosStyles(align: PosAlign.left, bold: true),
-    //      ),
-    // ]);
-    // bytes += generator.row([
-    //   PosColumn(
-    //       width: 6,
-    //       text: 'Seat No',
-    //     styles: const PosStyles(align: PosAlign.right, bold: true),
-    //      ),
-    //   PosColumn(
-    //       width: 6,
-    //       text: ': C17',
-    //     styles: const PosStyles(align: PosAlign.left, bold: true),
-    //       ),
-    // ]);
-    // bytes += generator.row([
-    //   PosColumn(
-    //       width: 8,
-    //       text: 'Type',
-    //     styles: const PosStyles(align: PosAlign.right, bold: true),
-    //      ),
-    //   PosColumn(
-    //       width: 4,
-    //       text: ': Adult',
-    //     styles: const PosStyles(align: PosAlign.left, bold: true),
-    //      ),
-    // ]);
 
     bytes += generator.emptyLines(1);
     bytes += generator.qrcode('example.com');
-    // const String base64String = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASIAAAEiAQMAAABncE31AAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABVklEQVRoge3Yyw3DIAwGYEsZICOxOiMxQCQ3+IEhUnvCufT3IW3I15NrO0CEQPxlnGxR72+6VPgiX72gEpV9cnWgqi5PoZKUJOKxLAm7L1CvqPOyZ3YL9Z7qd6WRVwfUG8rKgQ5WJb+sy1OoFBUTOUrk19yG2qam6Bnyifw9oHYq70L9clPmdrD+aFQHVIbqn6VJcqwcbkVeIo2g8pRT7UI6FXqa6jOPUPuVz+ExjG3329MUGYJKUP28YRTG9I18NkOlqaDSnppMBXJFBJWnJAfyOtpsKyCz2XLVoBLVWI6USK5IX46gEpU/sy4UCWOf0lBZKuK0qWA7MO1WTwS1UcXJA/nRzxjGU3VAZSj7/2t1FJ5LZM0eVILSLlRjDHhngnpLje2uvo7y0pmgUpUeu/lErt6eoDKVhE6FsfHVtfmdCWq/Yovq52y675ISiQxBJSgE4u/iAw0LD+J69uwvAAAAAElFTkSuQmCC";
-    // final List<int> qrByte = base64.decode(base64String);
+    bytes += generator.hr(ch: '-', len: 32, linesAfter: 1);
+    bytes += generator.text('No refund or exchange',
+        styles: const PosStyles(align: PosAlign.center, bold: true));
+    bytes += generator.emptyLines(1);
+    bytes += generator.text('Technology Partner www.cinesync.io',
+        styles: const PosStyles(align: PosAlign.center, bold: true));
+    return PrintData(generator, bytes);
+  }
+
+  //print file from template
+  Future<PrintData> printFileFromTemplate(WebSocketModel? webData) async {
+    List<int> bytes = [];
+    // default profile
+    final profile = await CapabilityProfile.load();
+    // PaperSize.mm80 or PaperSize.mm58
+
+    PaperSize paperSize;
+
+    if (webData?.paperSize == 'mm58') {
+      paperSize = PaperSize.mm58;
+    } else {
+      paperSize = PaperSize.mm80;
+    }
+
+    final generator = Generator(
+        webData?.paperSize != null ? paperSize : PaperSize.mm80, profile);
+
+    if (webData?.logo != null) {
+      if (webData?.logo?.isNotEmpty == true) {
+        final File? imageFile =
+            await ImageController.downloadImageAndDisplay(webData!.logo!);
+        debugPrint('imageFile: $imageFile');
+        if (imageFile != null) {
+          // Image downloaded successfully, continue with processing
+          final Uint8List imageBytes = await imageFile.readAsBytes();
+          // decode the bytes into an image
+          final decodedImage = img.decodeImage(imageBytes)!;
+          // Resize the image to a 130x? thumbnail (maintaining the aspect ratio).
+          img.Image thumbnail = img.copyResize(decodedImage, height: 130);
+          //  creates a copy of the original image with set dimensions
+          img.Image originalImg =
+              img.copyResize(decodedImage, width: 300, height: 100);
+
+          img.fill(originalImg, color: img.ColorRgb8(255, 255, 255));
+
+          // convert image to grayscale
+          var grayscaleImage = img.grayscale(originalImg);
+          debugPrint('grayscaleImage: $grayscaleImage');
+          bytes += generator.feed(1);
+          bytes += generator.image(grayscaleImage, align: PosAlign.center);
+          bytes += generator.feed(1);
+        }
+      }
+    }
+
+    bytes += generator.setStyles(const PosStyles(
+        align: PosAlign.center,
+        height: PosTextSize.size1,
+        width: PosTextSize.size1,
+        bold: true));
+    bytes += generator.text('CineSync',
+        styles: const PosStyles(
+            align: PosAlign.center,
+            bold: true,
+            height: PosTextSize.size2,
+            width: PosTextSize.size2));
+    bytes += generator.text('456 Oak Avenue Somewhereville,Canada.',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('Hotline :',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('info@cinecinema.com',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('https://cinesync-v2-stg.layoutindex.dev',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.hr(ch: '-', len: 48);
+    bytes += generator.text('Transaction #:2307-1033-5930-5392',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.hr(ch: '-', len: 48);
+    bytes += generator.text('Elemental',
+        styles: const PosStyles(align: PosAlign.center, bold: true));
+    bytes += generator.emptyLines(1);
+    bytes += generator.textLeftRight("Screen", "Room premium");
+    bytes += generator.textLeftRight("Show Date", "10/07/2023");
+    bytes += generator.textLeftRight("Show Time", "14:01");
+    bytes += generator.textLeftRight("Seat No", "D10");
+    bytes += generator.textLeftRight("Type ", "Students");
+    bytes += generator.emptyLines(1);
+
+    //handle qr code
+    if (webData?.qrUrl != null) {
+      if (webData?.qrUrl?.isNotEmpty == true) {
+        bytes += generator.qrcode(webData!.qrUrl!);
+      }
+    }
     // bytes += generator.qrcode(base64String,align: PosAlign.center,size: QRSize.Size4);
     bytes += generator.hr(ch: '-', len: 32, linesAfter: 1);
     bytes += generator.text('No refund or exchange',
@@ -428,7 +355,88 @@ class PrintController extends GetxController {
     return PrintData(generator, bytes);
   }
 
-  /// print ticket
+  //execute print command
+  Future<WebSocketResponseModel> printCommand(
+      PrintMapModel model, WebSocketModel? data, bool isTest) async {
+    PrintData printingData;
+    changePrinterStatus(model, 'Printing');
+    if (model.isConnected == false) {
+      Get.snackbar('Error', 'Printer is not connected');
+      return WebSocketResponseModel(
+          status: false, message: 'Printer is not connected');
+    }
+    if (isTest) {
+      printingData = await printReceiveTest();
+    } else {
+      if (data!.data!.isEmpty) {
+        return WebSocketResponseModel(
+            status: false, message: 'Print data is empty');
+      }
+      printingData = await printFileFromTemplate(data);
+    }
+    if (printingData == null) {
+      Get.snackbar('Error', 'Print data is null');
+      return WebSocketResponseModel(
+          status: false, message: 'Print data is null');
+    }
+    await printEscPos(printingData, model.printer!);
+    changePrinterStatus(model, 'Connected');
+    return WebSocketResponseModel(status: true, message: 'Print success');
+  }
+
+  //connect device
+  Future<bool> connectDevice(PrinterModel device) async {
+    switch (device.typePrinter) {
+      case PrinterType.usb:
+        return await printerManager.connect(
+            type: device.typePrinter,
+            model: UsbPrinterInput(
+                name: device.deviceName,
+                productId: device.productId,
+                vendorId: device.vendorId));
+      case PrinterType.bluetooth:
+        return await printerManager.connect(
+            type: device.typePrinter,
+            model: BluetoothPrinterInput(
+                name: device.deviceName,
+                address: device.address!,
+                isBle: device.isBle ?? false,
+                autoConnect: reconnect.value));
+
+      case PrinterType.network:
+        return await printerManager.connect(
+            type: device.typePrinter,
+            model: TcpPrinterInput(ipAddress: device.address!));
+      default:
+        return false;
+    }
+  }
+
+  //get printer by key
+  PrintMapModel? getPrinterByKey(String key) {
+    for (var element in selectedPrinterMap) {
+      if (element.key == key) {
+        return element;
+      }
+    }
+    return null;
+  }
+
+  //print command from websocket
+  Future<WebSocketResponseModel> webSocketPrintCommand(
+      WebSocketModel model) async {
+    if (model.printKey != null) {
+      PrintMapModel? printMapModel = getPrinterByKey(model.printKey!);
+      if (printMapModel != null) {
+        return await printCommand(printMapModel, model, false);
+      }
+    }
+    return WebSocketResponseModel(
+        status: false,
+        message: 'Printer with the provided key does not exist.');
+  }
+
+  // print ticket on selected printer
   printEscPos(PrintData data, PrinterModel device) async {
     var generator = data.generator;
     var bytes = data.bytes;

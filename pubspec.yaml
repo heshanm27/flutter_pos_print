@@ -48,6 +48,8 @@ dependencies:
   shared_preferences: ^2.2.0
   web_socket_channel: ^2.4.0
   flutter_window_close: ^0.2.2
+  image: ^4.0.17
+  path: ^1.8.3
 
 
 dev_dependencies:

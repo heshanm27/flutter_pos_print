@@ -55,10 +55,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Expanded(child: WindowTitleBarBox(
                             child: MoveWindow(
-                              // child: const Padding(
-                              //   padding: EdgeInsets.all(4.0),
-                              //   child: Text("CineSync Printer Manager",textAlign: TextAlign.center,),
-                              // ),
+                              child: const Padding(
+                                padding: EdgeInsets.fromLTRB(10, 5, 0, 0),
+                                child: Text("CineSync Printer Manager",textAlign: TextAlign.left,),
+                              ),
                             ))),
                         const WindowButtons(),
                       ],
@@ -246,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Row(
                                   children: [
                                     IconButton(onPressed: (){
-                                      printController.printCommand(e);
+                                      printController.printCommand(e,null,true);
                                     }, splashRadius: 10, icon: const Icon(Icons.print)),
                                     IconButton(
                                         onPressed: () {

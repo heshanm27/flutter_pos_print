@@ -1,36 +1,50 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_print/src/controller/print_controller.dart';
 import 'package:get/get.dart';
 import 'package:web_socket_channel/io.dart';
 
+import '../model/websocket_model.dart';
+import '../model/websocket_response_model.dart';
+
 class WebSocketController extends GetxController{
-  static const int port = 8000;
-  static const String ipAddress = "127.0.0.1";
+  final  int port = 12864;
+  final String ipAddress = "127.0.0.1";
 
   RxBool isConnected = false.obs;
   RxBool isConnecting = false.obs;
   RxString address = "".obs;
   RxInt connectionTimeOut = 5.obs;
   late IOWebSocketChannel channel;
-
+  late HttpServer server;
+  PrintController printController = Get.find<PrintController>();
   @override
   void onInit() {
     super.onInit();
-    webSocketServerUp();
-
+    _webSocketServerUp();
   }
 
+  @override
+  void dispose() {
+    channel.sink.close();
+    server.close(
+      force: true,
+    );
+    super.dispose();
+  }
 
   // Web Socket Server Up In Localhost
-  void webSocketServerUp() async {
+  void _webSocketServerUp() async {
     try {
-      final server = await HttpServer.bind(ipAddress, port);
-      if(server != null){
-        throw const SocketException("Port 8000 is already in use.");
+      server = await HttpServer.bind(ipAddress, port);
+      if(server == null){
+        throw  SocketException("Port $port is already in use.");
       }
       debugPrint('WebSocket server is running on port ${server.address.address}${server.port}');
       server.listen((request) {
+        debugPrint('New request: ${request.uri} from ${request.headers['auth']}');
+
         if (WebSocketTransformer.isUpgradeRequest(request)) {
           handleWebSocket(request);
         }
@@ -48,20 +62,24 @@ class WebSocketController extends GetxController{
   // Handle WebSocket connection.
   void handleWebSocket(HttpRequest request) {
     WebSocketTransformer.upgrade(request).then((WebSocket webSocket) {
-      // You can handle WebSocket events here.
-      webSocket.listen((data) {
-        print('Received data: $data');
-        // Handle incoming messages here.
-        webSocket.add('Message received: $data');
+      webSocket.listen((data) async {
+        WebSocketModel webSocketModel = WebSocketModel.fromJson(jsonDecode(data));
+        WebSocketResponseModel response = await printController.webSocketPrintCommand(webSocketModel);
+        webSocket.add(response.toJson().toString());
       }, onError: (error) {
+        webSocket.add('Error: $error');
         print('Error: $error');
       }, onDone: () {
+        webSocket.add('Disconnected!');
         print('WebSocket disconnected!');
       });
     }).catchError((error) {
       print('Error upgrading to WebSocket: $error');
     });
   }
+
+
+
 
 
 
