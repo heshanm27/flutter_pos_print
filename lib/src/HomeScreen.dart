@@ -55,10 +55,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Expanded(child: WindowTitleBarBox(
                             child: MoveWindow(
-                              child: const Padding(
-                                padding: EdgeInsets.all(4.0),
-                                child: Text("CineSync Printer Manager",textAlign: TextAlign.center,),
-                              ),
+                              // child: const Padding(
+                              //   padding: EdgeInsets.all(4.0),
+                              //   child: Text("CineSync Printer Manager",textAlign: TextAlign.center,),
+                              // ),
                             ))),
                         const WindowButtons(),
                       ],
@@ -242,10 +242,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                       visible: !webSocketController.isConnected.value,
                                       child: ElevatedButton(
                                           onPressed: () {
-                                            if(socketFormKey.currentState!.validate()) {
-                                              webSocketController
-                                                  .webSocketConnect(webSocketUrlController.text, int.parse(timeOutController.text) );
-                                            }
+                                            // if(socketFormKey.currentState!.validate()) {
+                                            //   webSocketController
+                                            //       .webSocketConnect(webSocketUrlController.text, int.parse(timeOutController.text) );
+                                            // }
+                                            // webSocketController.sendMessage();
                                           },
                                           child: const Text("Connect")),
                                     ),
@@ -255,10 +256,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       visible: webSocketController.isConnected.value,
                                       child: ElevatedButton(
                                           onPressed: () {
-                                            if(socketFormKey.currentState!.validate()) {
-                                              webSocketController
-                                                  .disconnect();
-                                            }
+                                            // if(socketFormKey.currentState!.validate()) {
+                                            //   webSocketController
+                                            //       .disconnect();
+                                            // }
                                           },
                                           child: const Text("Disconnect")),
                                     ),
@@ -298,12 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ElevatedButton(onPressed: (){
                         printController.saveSelectedPrinterMapToSharedPreferences(printController.selectedPrinterMap.value);
                       }, child: const Text("Save List ")),
-                      ElevatedButton(onPressed: () async{
-                     await printController.getSelectedPrinterMapFromSharedPreferences();
-                        // list.forEach((element) {
-                        //   print(element.deviceName);
-                        // });
-                      }, child: const Text("Get List"))
+
                     ],
                   ),
                 ),

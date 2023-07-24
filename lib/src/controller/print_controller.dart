@@ -34,8 +34,8 @@ class PrintController extends GetxController {
   @override
   void onInit() {
     if (Platform.isWindows) defaultPrinterType = PrinterType.usb;
-    if(Platform.isAndroid) defaultPrinterType = PrinterType.bluetooth;
-    if(Platform.isAndroid) isBle.value = true;
+    if (Platform.isAndroid) defaultPrinterType = PrinterType.bluetooth;
+    if (Platform.isAndroid) isBle.value = true;
     super.onInit();
     scan();
 
@@ -59,7 +59,6 @@ class PrintController extends GetxController {
       }
     });
 
-
     //  PrinterManager.instance.stateUSB is only supports on Android
     subscriptionUsbStatus = PrinterManager.instance.stateUSB.listen((status) {
       _currentUsbStatus = status;
@@ -73,16 +72,20 @@ class PrintController extends GetxController {
         }
       }
     });
+    loadCacheFromStorage();
   }
- @override
+
+  @override
   void onReady() {
     // TODO: implement onReady
     super.onReady();
-    everAll([reconnect,isBle], (callback){
+    everAll([reconnect, isBle], (callback) {
       debugPrint('reconnect: $reconnect');
       debugPrint('isBle: $isBle');
-      scan();});
+      scan();
+    });
   }
+
   @override
   void onClose() {
     // Cancel the subscriptions to avoid memory leaks
@@ -106,15 +109,14 @@ class PrintController extends GetxController {
         productId: device.productId,
         typePrinter: defaultPrinterType,
       ));
-
     });
   }
 
+  //refresh scan
   void refreshScan(PrinterType type) {
     defaultPrinterType = type;
     scan();
   }
-
 
   // void setPort(String value) {
   //   if (value.isEmpty) value = '9100';
@@ -139,11 +141,7 @@ class PrintController extends GetxController {
   //   );
   //   selectDevice(device);
   // }
-  void setNetWorkPrinter(String port,String address){
-
-  }
-
-
+  void setNetWorkPrinter(String port, String address) {}
 
   void selectDevice(PrinterModel device) async {
     if (selectedPrinter != null) {
@@ -161,8 +159,12 @@ class PrintController extends GetxController {
   //map printer to key
   void mapPrinterToKey(String key, PrinterModel printer) {
     selectedPrinterMap.add(PrintMapModel(
-        mapId:selectedPrinterMap.length ,
-        key: key, printer: printer,deviceName: printer.deviceName,isConnected: true,status: 'Connected'));
+        mapId: selectedPrinterMap.length,
+        key: key,
+        printer: printer,
+        deviceName: printer.deviceName,
+        isConnected: true,
+        status: 'Connected'));
     refresh();
     update();
     // connectMapDeviceTo();
@@ -190,26 +192,26 @@ class PrintController extends GetxController {
       if (value == true) {
         element.isConnected = true;
         element.status = 'Connected';
+        debugPrint("${element.deviceName} device connected");
         selectedPrinterMap.refresh();
       } else {
-        changePrinterStatus(element,'Disconnected');
+        changePrinterStatus(element, 'Disconnected');
         element.isConnected = false;
       }
     });
-
   }
 
   //change status of printer
-  void changePrinterStatus(PrintMapModel device,String status) {
+  void changePrinterStatus(PrintMapModel device, String status) {
     if (device.printer == null) return;
     for (var element in selectedPrinterMap) {
-      if(element.mapId == device.mapId){
+      if (element.mapId == device.mapId) {
         element.status = status;
       }
     }
   }
 
-  void addTcpIpPrinter(String key,String address,String port){
+  void addTcpIpPrinter(String key, String address, String port) {
     PrinterModel printer = PrinterModel(
       deviceName: address,
       address: address,
@@ -227,16 +229,15 @@ class PrintController extends GetxController {
     update();
   }
 
-
   //execute print command
-  void printCommand(PrintMapModel model) async{
+  void printCommand(PrintMapModel model) async {
     changePrinterStatus(model, 'Printing');
-    if(model.isConnected == false){
+    if (model.isConnected == false) {
       Get.snackbar('Error', 'Printer is not connected');
       return;
     }
-    PrintData printData  = await printReceiveTest();
-    if(printData == null){
+    PrintData printData = await printReceiveTest();
+    if (printData == null) {
       Get.snackbar('Error', 'Print data is null');
       return;
     }
@@ -244,9 +245,7 @@ class PrintController extends GetxController {
     changePrinterStatus(model, 'Connected');
   }
 
-
   Future<bool> connectDevice(PrinterModel device) async {
-
     switch (device.typePrinter) {
       case PrinterType.usb:
         return await printerManager.connect(
@@ -266,13 +265,12 @@ class PrintController extends GetxController {
 
       case PrinterType.network:
         return await printerManager.connect(
-            type:device.typePrinter,
+            type: device.typePrinter,
             model: TcpPrinterInput(ipAddress: device.address!));
       default:
         return false;
     }
   }
-
 
   Future<PrintData> printReceiveTest() async {
     List<int> bytes = [];
@@ -431,7 +429,7 @@ class PrintController extends GetxController {
   }
 
   /// print ticket
-   printEscPos(PrintData data,PrinterModel device) async {
+  printEscPos(PrintData data, PrinterModel device) async {
     var generator = data.generator;
     var bytes = data.bytes;
     var connectedTCP = false;
@@ -486,18 +484,20 @@ class PrintController extends GetxController {
   }
 
   //print ticket on multi device
-  printTicketOnMultiDevice (String key) async {
-   for (var value in selectedPrinterMap) {
-     if(value.key == key){
-       debugPrint('value.key ${value.key}');
-       PrintData printData  = await printReceiveTest();
-       if(value.printer == null) continue;
-       printEscPos(printData, value.printer!);
-     }
-   }
+  printTicketOnMultiDevice(String key) async {
+    for (var value in selectedPrinterMap) {
+      if (value.key == key) {
+        debugPrint('value.key ${value.key}');
+        PrintData printData = await printReceiveTest();
+        if (value.printer == null) continue;
+        printEscPos(printData, value.printer!);
+      }
+    }
   }
 
-  Future<void> saveSelectedPrinterMapToSharedPreferences(List<PrintMapModel> data) async {
+  //save selected printer map to shared preferences
+  Future<void> saveSelectedPrinterMapToSharedPreferences(
+      List<PrintMapModel> data) async {
     final prefs = await SharedPreferences.getInstance();
 
     List<Map<String, dynamic>> list = [];
@@ -511,10 +511,14 @@ class PrintController extends GetxController {
     await prefs.setString('selected_printer_map_data', jsonData);
   }
 
-  Future<List<PrintMapModel>> getSelectedPrinterMapFromSharedPreferences() async {
+  //get selected printer map from shared preferences
+  Future<List<PrintMapModel>>
+      getSelectedPrinterMapFromSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
+    //get data from shared preferences
     final jsonData = prefs.getString('selected_printer_map_data');
-    debugPrint('jsonData: $jsonData');
+    // debugPrint('jsonData: $jsonData');
+
     if (jsonData != null) {
       List<dynamic> data = json.decode(jsonData);
       debugPrint('data: $data');
@@ -522,14 +526,21 @@ class PrintController extends GetxController {
       for (var element in data) {
         testMap.add(PrintMapModel.fromJson(element));
       }
-      selectedPrinterMap.value = testMap;
-      selectedPrinterMap.refresh();
-      update();
+      return testMap;
     }
     return [];
   }
 
-
-
-
+  //load cache from storage
+  Future<void> loadCacheFromStorage() async {
+    List<PrintMapModel> cacheList =
+        await getSelectedPrinterMapFromSharedPreferences();
+    if (cacheList.isNotEmpty) {
+      selectedPrinterMap.value = cacheList;
+      selectedPrinterMap.refresh();
+      update();
+    }
+    //pre connect printer
+    connectMapDeviceTo();
+  }
 }
