@@ -21,6 +21,7 @@ class CustomButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
         onPressed: onPressed,
+
         style: isOutlined
             ? ButtonStyle(
                 elevation:
@@ -35,23 +36,26 @@ class CustomButton extends StatelessWidget {
                 ),
               )
             : null, //
-        child: Row(
-          children: [
-            Text(title,style: TextStyle(
-              color:isOutlined ? Colors.black :Colors.white
-            ),),
-            const SizedBox(
-              width: 10,
-            ),
-            icon != null
-                ? ImageLoader(
-                    url: icon ?? "",
-                    height: 16,
-                    width: 16,
-                    color: iconColor,
-                  )
-                : const SizedBox()
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8,horizontal:4 ),
+          child: Row(
+            children: [
+              Text(title,style: TextStyle(
+                color:isOutlined ? Colors.black :Colors.white
+              ),),
+              const SizedBox(
+                width: 10,
+              ),
+              icon != null
+                  ? ImageLoader(
+                      url: icon ?? "",
+                      height: 16,
+                      width: 16,
+                      color: iconColor,
+                    )
+                  : const SizedBox()
+            ],
+          ),
         ));
   }
 }
