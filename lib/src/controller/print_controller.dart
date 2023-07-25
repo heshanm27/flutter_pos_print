@@ -187,6 +187,7 @@ class PrintController extends GetxController {
         element.status = status;
       }
     }
+    update();
   }
 
   //add TcpIp printer
@@ -365,7 +366,7 @@ class PrintController extends GetxController {
       return WebSocketResponseModel(
           status: false, message: 'Printer is not connected');
     }
-    if (isTest) {
+    if (isTest == true) {
       printingData = await printReceiveTest();
     } else {
       if (data!.data!.isEmpty) {

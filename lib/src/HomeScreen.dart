@@ -1,13 +1,19 @@
+import 'dart:io';
+
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_print/src/components/custom_button.dart';
+import 'package:flutter_print/src/components/info_components.dart';
 import 'package:flutter_print/src/controller/print_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
+import 'components/custom_chip.dart';
 import 'components/printerDialog.dart';
-import 'components/window_buttons.dart';
+import 'components/window_top_action_bar.dart';
+import 'components/windows_buttons.dart';
 import 'controller/websocket_controller.dart';
-
+import 'model/Info_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,7 +24,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   PrintController printController = Get.find<PrintController>();
-   WebSocketController webSocketController = Get.find<WebSocketController>();
+  WebSocketController webSocketController = Get.find<WebSocketController>();
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
   GlobalKey<FormState> socketFormKey = GlobalKey<FormState>();
   final ipController = TextEditingController();
@@ -35,8 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
     webSocketUrlController.dispose();
     timeOutController.dispose();
     super.dispose();
-
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,136 +53,49 @@ class _HomeScreenState extends State<HomeScreen> {
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  color: Colors.grey[200],
-                  child: WindowTitleBarBox(
-                    child: Row(
-                      children: [
-                        Expanded(child: WindowTitleBarBox(
-                            child: MoveWindow(
-                              child: const Padding(
-                                padding: EdgeInsets.fromLTRB(10, 5, 0, 0),
-                                child: Text("CineSync Printer Manager",textAlign: TextAlign.left,),
-                              ),
-                            ))),
-                        const WindowButtons(),
-                      ],
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: Form(
-                          key: formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              const Text("TCP/IP Printer"),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Flexible(
-                                      flex: 2, child: Text("Printer Map Key: ")),
-                                  const SizedBox(
-                                    width: 10,
-                                  ),
-                                  Flexible(
-                                    flex: 2,
-                                    child: TextFormField(
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter Printer Map Key';
-                                        }
-                                        return null;
-                                      },
-                                      decoration: const InputDecoration(
-                                        hintText: 'Enter Printer Map Key',
-                                      ),
-                                      controller: printerKeyController,
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Flexible(
-                                      flex: 2, child: Text("IP Address: ")),
-                                  const SizedBox(
-                                    width: 10,
-                                  ),
-                                  Flexible(
-                                    flex: 2,
-                                    child: TextFormField(
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter ip address';
-                                        }
-                                        return null;
-                                      },
-                                      decoration: const InputDecoration(
-                                        hintText: 'Enter IP Address',
-                                      ),
-                                      controller: ipController,
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Flexible(
-                                      flex: 2, child: Text("PORT: ")),
-                                  const SizedBox(
-                                    width: 10,
-                                  ),
-                                  Flexible(
-                                    flex: 2,
-                                    child: TextFormField(
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter port';
-                                        }
-                                        return null;
-                                      },
-                                      controller: portController,
-                                      decoration: const InputDecoration(
-                                        hintText: 'Enter PORT',
-                                      ),
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(
-                                height: 30,
-                              ),
-                              ElevatedButton(
-                                  onPressed: () {
-                                    if (formKey.currentState!.validate()) {
-                                      printController.addTcpIpPrinter(
-                                          printerKeyController.text,
-                                          ipController.text,
-                                          portController.text);
-                                    }
-                                  },
-                                  child: const Text("Connect"))
-                            ],
-                          ),
-                        ),
+                if (Platform.isWindows || Platform.isLinux)
+                  const WindowsTopActionBar(),
+
+                //  Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 40,vertical: 16),
+                //   child: Text("CINEsync Printer Manager",textAlign: TextAlign.end,style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                //     fontWeight: FontWeight.w700
+                //   ),),
+                // ),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
+                  child: Row(
+                    children: [
+                      Expanded(
+                          child: InfoComponents(
+                        data: [
+                          InfoModel(
+                              title: "Address",
+                              value: webSocketController.ipAddress),
+                          InfoModel(
+                              title: "Port",
+                              value: webSocketController.port.toString())
+                        ],
+                        title: "GENERAL",
+                      )),
+                      const SizedBox(
+                        width: 32,
                       ),
-                    ),
-                  ],
+                      Expanded(
+                          child: InfoComponents(
+                        data: [
+                          InfoModel(
+                              title: "Socket Address",
+                              value:
+                                  "ws://${webSocketController.ipAddress}:${webSocketController.port} "),
+                        ],
+                        title: "WEB SOCKET",
+                      )),
+                    ],
+                  ),
                 ),
                 const SizedBox(
                   height: 30,
@@ -186,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      ElevatedButton(
+                      CustomButton(
                           onPressed: () {
                             showDialog(
                                 context: context,
@@ -194,91 +113,213 @@ class _HomeScreenState extends State<HomeScreen> {
                                   return const PrinterDialog();
                                 });
                           },
-                          child: const Text("Add Printer")),
+                          icon: "assets/icons/plus.svg",
+                          title: "Add Printer"),
                       const SizedBox(
                         width: 10,
                       ),
-                      ElevatedButton(onPressed: (){
-                        printController.printTicketOnMultiDevice("invoice");
-                      }, child: const Text("Print multi Test")),
-                      ElevatedButton(onPressed: (){
-                        printController.saveSelectedPrinterMapToSharedPreferences(printController.selectedPrinterMap.value);
-                      }, child: const Text("Save List ")),
-
+                      CustomButton(
+                          onPressed: () {
+                            printController
+                                .saveSelectedPrinterMapToSharedPreferences(
+                                    printController.selectedPrinterMap.value);
+                          },
+                          icon: "assets/icons/save.svg",
+                          isOutlined: true,
+                          iconColor: Colors.black,
+                          title: "Save List"),
                     ],
                   ),
                 ),
                 const SizedBox(
-                  height: 30,
+                  height: 20,
                 ),
                 Obx(
-                      () => SingleChildScrollView(
+                  () => SingleChildScrollView(
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: DataTable(
-                            columns: const [
-                              DataColumn(label: Text("Printer Key")),
-                              DataColumn(label: Text("Device Name")),
-                              DataColumn(label: Text("Device Status")),
-                              DataColumn(label: Text("Action")),
-                            ],
-                            rows: printController.selectedPrinterMap.value
-                                .map((e) => DataRow(cells: [
-                              DataCell(Text(e.key ?? ""), onTap: () {
-                                printController.selectedPrinterMap.value
-                                    .remove(e);
-                              }),
-                              DataCell(
-
-                                Text(e.printer?.deviceName ?? "",maxLines: 1,overflow: TextOverflow.ellipsis,),
-                              ),
-                              DataCell(
-                                e.status == "Connecting"
-                                    ? const SpinKitThreeBounce(
-                                  color: Colors.grey,
-                                  size: 12,
-                                )
-                                    : Text(e.status ?? ""),
-                              ),
-                              DataCell(SingleChildScrollView(
-                                child: Row(
-                                  children: [
-                                    IconButton(onPressed: (){
-                                      printController.printCommand(e,null,true);
-                                    }, splashRadius: 10, icon: const Icon(Icons.print)),
-                                    IconButton(
-                                        onPressed: () {
-                                          printController.connectOneDevice(e);
-                                        },
-                                        splashRadius: 10,
-                                        icon: const Icon(
-                                          Icons.refresh,
+                      child: DataTable(
+                          columnSpacing: Platform.isWindows == true
+                              ? 100
+                              : 100 * MediaQuery.of(context).size.width * 0.1,
+                          columns: [
+                            DataColumn(
+                                label: Text(
+                              "PRINTER KEY",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                      color: Colors.black.withOpacity(0.7)),
+                            )),
+                            DataColumn(
+                                label: Text("DEVICE NAME",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                            color: Colors.black
+                                                .withOpacity(0.7)))),
+                            DataColumn(
+                                label: Text("STATUS",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                            color: Colors.black
+                                                .withOpacity(0.7)))),
+                            DataColumn(
+                                label: Text("ACTION",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                            color: Colors.black
+                                                .withOpacity(0.7)))),
+                          ],
+                          rows: printController.selectedPrinterMap.value.isEmpty
+                              ? [
+                                  // Wrap the single DataRow in a List
+                                  const DataRow(cells: [
+                                    DataCell(Text("No Device Selected")),
+                                    DataCell(Text("No Device Selected")),
+                                    DataCell(Text("No Device Selected")),
+                                    DataCell(Text("No Device Selected")),
+                                  ]),
+                                ]
+                              : printController.selectedPrinterMap.value
+                                  .map((e) => DataRow(cells: [
+                                        DataCell(
+                                            Text(e.key ?? "No Device Data")),
+                                        DataCell(
+                                          Text(
+                                            e.printer?.deviceName ??
+                                                "No Device Data",
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          e.status == "Connecting"
+                                              ? const SpinKitThreeBounce(
+                                                  color: Colors.grey,
+                                                  size: 12,
+                                                )
+                                              : getStatusChip(
+                                                  e.status ?? "No Device Data"),
+                                        ),
+                                        DataCell(SingleChildScrollView(
+                                          child: Row(
+                                            children: [
+                                              Tooltip(
+                                                message: "Test Printer",
+                                                child: IconButton(
+                                                  onPressed: () {
+                                                    printController
+                                                        .printCommand(
+                                                            e, null, true);
+                                                  },
+                                                  splashRadius: 10,
+                                                  icon: SizedBox(
+                                                    height: 89,
+                                                    width: 89,
+                                                    child: Image.asset(
+                                                        "assets/icons/printer.png"),
+                                                  ),
+                                                ),
+                                              ),
+                                              Tooltip(
+                                                message: "Refresh Connection",
+                                                child: IconButton(
+                                                  onPressed: () {
+                                                    printController
+                                                        .connectOneDevice(e);
+                                                  },
+                                                  splashRadius: 10,
+                                                  icon: SizedBox(
+                                                    height: 89,
+                                                    width: 89,
+                                                    child: Image.asset(
+                                                        "assets/icons/refresh.png"),
+                                                  ),
+                                                ),
+                                              ),
+                                              Tooltip(
+                                                message: "Delete  Config",
+                                                child: IconButton(
+                                                  onPressed: () {
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (BuildContext context) {
+                                                        return AlertDialog(
+                                                          title: Text('Confirmation'),
+                                                          content: Text('Are you sure you want to delete this config?'),
+                                                          actions: <Widget>[
+                                                            TextButton(
+                                                              onPressed: () {
+                                                                // Perform the action to delete the config
+                                                                printController.removeMapPrinter(e);
+                                                                Navigator.of(context).pop(); // Close the dialog
+                                                              },
+                                                              child: Text('Yes'),
+                                                            ),
+                                                            TextButton(
+                                                              onPressed: () {
+                                                                Navigator.of(context).pop(); // Close the dialog
+                                                              },
+                                                              child: Text('No'),
+                                                            ),
+                                                          ],
+                                                        );
+                                                      },
+                                                    );
+                                                    //
+                                                    // printController
+                                                    //     .removeMapPrinter(e);
+                                                  },
+                                                  splashRadius: 10,
+                                                  icon: SizedBox(
+                                                    height: 89,
+                                                    width: 89,
+                                                    child: Image.asset(
+                                                        "assets/icons/bin.png"),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         )),
-                                    IconButton(
-                                        onPressed: () {
-                                          printController.removeMapPrinter(e);
-                                        },
-                                        splashRadius: 10,
-                                        icon: const Icon(
-                                          Icons.delete,
-                                        )),
-                                  ],
-                                ),
-                              )),
-                            ]))
-                                .toList()),
-                      ),
+                                      ]))
+                                  .toList()),
                     ),
                   ),
                 )
-
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget getStatusChip(String status) {
+    switch (status) {
+      case "Connected":
+        return CustomChip(
+          status: status,
+          bgColor: Colors.green.withOpacity(0.5),
+          iconColor: Colors.green,
+        );
+      case "Connecting":
+        return CustomChip(
+          status: status,
+          bgColor: Colors.orange.withOpacity(0.5),
+          iconColor: Colors.orange,
+        );
+      default:
+        return CustomChip(
+          status: status,
+        );
+    }
   }
 }

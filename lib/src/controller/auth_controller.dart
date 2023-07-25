@@ -1,19 +1,21 @@
-
-
-
 import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthController {
-  static const String _key = "O7sdHPml6zBaGgvjQQ/lNfD22ZvbJ6hP92PZ98P9dPlKk352xrHpYQvYzZ970qw0";
+
+  static  final String? _key = dotenv.env['AUTH_KEY'];
 
 
   static bool checkAuth(String? key)  {
+
+
+    debugPrint('key: ${key}');
+
     if(key == null){
       return false;
     }
-
+    debugPrint('key: ${dotenv.env['AUTH_KEY']}');
 
     try {
       String parsedKey = utf8.decode(base64.decode(key));
