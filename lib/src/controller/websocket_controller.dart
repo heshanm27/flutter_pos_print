@@ -7,9 +7,10 @@ import 'package:web_socket_channel/io.dart';
 
 import '../model/websocket_model.dart';
 import '../model/websocket_response_model.dart';
+import 'auth_controller.dart';
 
-class WebSocketController extends GetxController{
-  final  int port = 12864;
+class WebSocketController extends GetxController {
+  final int port = 12864;
   final String ipAddress = "127.0.0.1";
 
   RxBool isConnected = false.obs;
@@ -19,6 +20,7 @@ class WebSocketController extends GetxController{
   late IOWebSocketChannel channel;
   late HttpServer server;
   PrintController printController = Get.find<PrintController>();
+
   @override
   void onInit() {
     super.onInit();
@@ -38,21 +40,21 @@ class WebSocketController extends GetxController{
   void _webSocketServerUp() async {
     try {
       server = await HttpServer.bind(ipAddress, port);
-      if(server == null){
-        throw  SocketException("Port $port is already in use.");
+      if (server == null) {
+        throw SocketException("Port $port is already in use.");
       }
-      debugPrint('WebSocket server is running on port ${server.address.address}${server.port}');
+      debugPrint(
+          'WebSocket server is running on port ${server.address.address}${server.port}');
       server.listen((request) {
-        debugPrint('New request: ${request.uri} from ${request.headers['auth']}');
-
-        if (WebSocketTransformer.isUpgradeRequest(request)) {
-          handleWebSocket(request);
-        }
+          if (WebSocketTransformer.isUpgradeRequest(request)) {
+            handleWebSocket(request);
+          }
       });
-      channel = IOWebSocketChannel.connect('ws://$ipAddress:${port.toString()}');
-    }catch(e){
+      channel =
+          IOWebSocketChannel.connect('ws://$ipAddress:${port.toString()}');
+    } catch (e) {
       if (e is SocketException) {
-        Get.defaultDialog(title: "Error",middleText: e.message);
+        Get.defaultDialog(title: "Error", middleText: e.message);
       } else {
         debugPrint('Error starting WebSocket server: $e');
       }
@@ -63,31 +65,31 @@ class WebSocketController extends GetxController{
   void handleWebSocket(HttpRequest request) {
     WebSocketTransformer.upgrade(request).then((WebSocket webSocket) {
       webSocket.listen((data) async {
-        WebSocketModel webSocketModel = WebSocketModel.fromJson(jsonDecode(data));
-        WebSocketResponseModel response = await printController.webSocketPrintCommand(webSocketModel);
-        webSocket.add(response.toJson().toString());
+        try {
+          if(AuthController.checkAuth(request.headers.value('auth')) == true) {
+            WebSocketModel webSocketModel =
+            WebSocketModel.fromJson(jsonDecode(data));
+            WebSocketResponseModel response =
+            await printController.webSocketPrintCommand(webSocketModel);
+            webSocket.add(response.toJson().toString());
+          }else{
+          throw Exception("Authentication Failed");
+          }
+        } catch (e) {
+          webSocket.add('Error: $e');
+        }
       }, onError: (error) {
         webSocket.add('Error: $error');
-        print('Error: $error');
+        // print('Error: $error');
       }, onDone: () {
         webSocket.add('Disconnected!');
         print('WebSocket disconnected!');
       });
     }).catchError((error) {
+      
       print('Error upgrading to WebSocket: $error');
     });
   }
-
-
-
-
-
-
-
-
-
-
-
 
 // void webSocketConnect(String url,int? timeOut){
 //   debugPrint("Connecting to $url");

@@ -425,8 +425,10 @@ class PrintController extends GetxController {
   //print command from websocket
   Future<WebSocketResponseModel> webSocketPrintCommand(
       WebSocketModel model) async {
-    if (model.printKey != null) {
-      PrintMapModel? printMapModel = getPrinterByKey(model.printKey!);
+    debugPrint('model.printKey: ${model.printerKey}');
+    if (model.printerKey != null) {
+
+      PrintMapModel? printMapModel = getPrinterByKey(model.printerKey!);
       if (printMapModel != null) {
         return await printCommand(printMapModel, model, false);
       }

@@ -5,7 +5,7 @@ WebSocketModel webSocketModelFromJson(String str) => WebSocketModel.fromJson(jso
 String webSocketModelToJson(WebSocketModel data) => json.encode(data.toJson());
 
 class WebSocketModel {
-  String? printKey;
+  String? printerKey;
   String? data;
   String? message;
   String? logo;
@@ -13,7 +13,7 @@ class WebSocketModel {
   String? qrUrl;
 
   WebSocketModel({
-    this.printKey,
+    this.printerKey,
     this.data,
     this.message,
     this.logo,
@@ -23,7 +23,7 @@ class WebSocketModel {
   });
 
   factory WebSocketModel.fromJson(Map<String, dynamic> json) => WebSocketModel(
-    printKey: json["printKey"],
+    printerKey: json["printerKey"],
     data: json["data"],
     message: json["message"],
     logo: json["logo"],
@@ -32,7 +32,7 @@ class WebSocketModel {
   );
 
   Map<String, dynamic> toJson() => {
-    "printKey": printKey,
+    "printerKey": printerKey,
     "data": data,
     "message": message,
     "logo": logo,
