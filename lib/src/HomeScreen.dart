@@ -9,6 +9,7 @@ import 'package:flutter_print/src/controller/print_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'components/custom_chip.dart';
+import 'components/drop_down_btn.dart';
 import 'components/printerDialog.dart';
 import 'components/window_top_action_bar.dart';
 import 'components/windows_buttons.dart';
@@ -57,13 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 if (Platform.isWindows || Platform.isLinux)
                   const WindowsTopActionBar(),
-
-                //  Padding(
-                //   padding: const EdgeInsets.symmetric(horizontal: 40,vertical: 16),
-                //   child: Text("CINEsync Printer Manager",textAlign: TextAlign.end,style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                //     fontWeight: FontWeight.w700
-                //   ),),
-                // ),
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
@@ -105,13 +99,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      CustomButton(
+                      CustomDropButton(
                           onPressed: () {
-                            showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return const PrinterDialog();
-                                });
+
                           },
                           icon: "assets/icons/plus.svg",
                           title: "Add Printer"),
@@ -252,8 +242,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       context: context,
                                                       builder: (BuildContext context) {
                                                         return AlertDialog(
-                                                          title: Text('Confirmation'),
-                                                          content: Text('Are you sure you want to delete this config?'),
+                                                          title: const Text('Confirmation'),
+                                                          content: const Text('Are you sure you want to delete this config?'),
                                                           actions: <Widget>[
                                                             TextButton(
                                                               onPressed: () {
@@ -261,13 +251,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                 printController.removeMapPrinter(e);
                                                                 Navigator.of(context).pop(); // Close the dialog
                                                               },
-                                                              child: Text('Yes'),
+                                                              child: const Text('Yes'),
                                                             ),
                                                             TextButton(
                                                               onPressed: () {
                                                                 Navigator.of(context).pop(); // Close the dialog
                                                               },
-                                                              child: Text('No'),
+                                                              child: const Text('No'),
                                                             ),
                                                           ],
                                                         );

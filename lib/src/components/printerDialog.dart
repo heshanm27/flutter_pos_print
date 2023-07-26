@@ -6,21 +6,37 @@ import '../controller/print_controller.dart';
 import '../model/printer_model.dart';
 
 class PrinterDialog extends StatefulWidget {
-  const PrinterDialog({super.key});
+  String printerType;
+   PrinterDialog({required this.printerType,    super.key});
 
   @override
   State<PrinterDialog> createState() => _PrinterDialogState();
 }
 
 class _PrinterDialogState extends State<PrinterDialog> {
+
+  TextEditingController printerKeyController = TextEditingController();
+  late PrintController printController;
+  GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  PrinterType? selectedPrinterType;
+  late PrinterModel selectedPrinter ;
   @override
-  Widget build(BuildContext context) {
-    TextEditingController printerKeyController = TextEditingController();
-    PrintController printController = Get.find<PrintController>();
-    GlobalKey<FormState> formKey = GlobalKey<FormState>();
-    PrinterModel selectedPrinter = printController.devices.isNotEmpty
+  void initState() {
+    printController = Get.find<PrintController>();
+    selectedPrinterType  = getPrinterType(widget.printerType);
+    selectedPrinter =printController.devices.isNotEmpty
         ? printController.devices.first
         : PrinterModel();
+    printController.refreshScan(getPrinterType(widget.printerType));
+    super.initState();
+  }
+
+
+
+
+  @override
+  Widget build(BuildContext context) {
+
 
 
     return Dialog(
@@ -31,17 +47,26 @@ class _PrinterDialogState extends State<PrinterDialog> {
         child: Form(
           key: formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Select And Map Printer"),
+               Text("Add New Printer",style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold
+              ),),
+
+              const SizedBox(
+                height: 10,
+              ),
               DropdownButtonFormField<PrinterType>(
-                value: printController.defaultPrinterType,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(
-                    Icons.print,
-                    size: 24,
+                value:printController.defaultPrinterType,
+                decoration:  InputDecoration(
+                  prefixIcon: SizedBox(
+                    height: 36,
+                    width: 36,
+                    child: Image.asset(
+                        "assets/icons/printer.png"),
                   ),
                   labelText: "Type Printer Device",
-                  labelStyle: TextStyle(fontSize: 18.0),
+                  labelStyle: const TextStyle(fontSize: 16.0),
                   focusedBorder: InputBorder.none,
                   enabledBorder: InputBorder.none,
                 ),
@@ -49,22 +74,24 @@ class _PrinterDialogState extends State<PrinterDialog> {
                   if (Platform.isAndroid || Platform.isIOS)
                     const DropdownMenuItem(
                       value: PrinterType.bluetooth,
-                      child: Text("bluetooth"),
+                      child: Text("Bluetooth",style: TextStyle(fontSize: 12)),
                     ),
                   if (Platform.isAndroid || Platform.isWindows)
                     const DropdownMenuItem(
                       value: PrinterType.usb,
-                      child: Text("usb"),
+                      child: Text("USB",style: TextStyle(fontSize: 12)),
                     ),
-                  if (Platform.isAndroid || Platform.isIOS)
+                  if (Platform.isAndroid || Platform.isIOS || Platform.isWindows)
                   const DropdownMenuItem(
                     value: PrinterType.network,
-                    child: Text("Wifi"),
+                    child: Text("Network",style: TextStyle(fontSize: 12)),
                   ),
                 ],
                 onChanged: (PrinterType? value) {
                   setState(() {
+                    debugPrint("value $value");
                     if (value != null) {
+                      printController.defaultPrinterType = value;
                       printController.refreshScan(value);
                     }
                   });
@@ -128,7 +155,7 @@ class _PrinterDialogState extends State<PrinterDialog> {
                 height: 12,
               ),
               Obx(
-                  ()=> printController.devices.length == 0 ?const Text("No Devices Detected")  : Row(
+                  ()=> printController.devices.isEmpty ?const Text("No Devices Detected")  : Row(
                   children: [
                     const Text("Select Printer"),
                     const SizedBox(
@@ -146,7 +173,6 @@ class _PrinterDialogState extends State<PrinterDialog> {
                             .toList(),
                         onChanged: (selectedDevice) {
                           selectedPrinter = selectedDevice!;
-                          // Add your logic here for when the dropdown value changes.
                         },
                       ),
                     )
@@ -186,5 +212,19 @@ class _PrinterDialogState extends State<PrinterDialog> {
         ),
       ),
     );
+  }
+
+
+  PrinterType getPrinterType(String type){
+    switch(type){
+      case "bluetooth":
+        return PrinterType.bluetooth;
+      case "usb":
+        return PrinterType.usb;
+      case "network":
+        return PrinterType.network;
+      default:
+        return PrinterType.usb;
+    }
   }
 }
