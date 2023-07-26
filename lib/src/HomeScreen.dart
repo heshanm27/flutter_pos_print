@@ -1,6 +1,4 @@
 import 'dart:io';
-
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_print/src/components/custom_button.dart';
@@ -10,9 +8,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'components/custom_chip.dart';
 import 'components/drop_down_btn.dart';
-import 'components/printerDialog.dart';
 import 'components/window_top_action_bar.dart';
-import 'components/windows_buttons.dart';
 import 'controller/websocket_controller.dart';
 import 'model/Info_model.dart';
 

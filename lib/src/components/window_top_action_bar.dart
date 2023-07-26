@@ -1,7 +1,7 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_print/src/components/windows_buttons.dart';
-
+import '../misc/app_constants.dart';
 import 'image_loader.dart';
 
 class WindowsTopActionBar extends StatelessWidget {
@@ -22,7 +22,7 @@ class WindowsTopActionBar extends StatelessWidget {
                       children: [
                         const ImageLoader(url: "assets/winIcon.png",width: 20,height: 20),
                         const SizedBox(width: 10,),
-                        Text("CineSync Printer Manager",style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        Text(AppConstant.appName,style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: Colors.white,
                         ),textAlign: TextAlign.left,),
                       ],

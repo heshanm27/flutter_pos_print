@@ -68,16 +68,16 @@ dev_dependencies:
   flutter_lints: ^2.0.0
 
 msix_config:
-  display_name: CineSync Printer Manager
-  publisher_display_name: CineSync
-  identity_name: CineSync.io
+  display_name: CINEsync.io
+  publisher_display_name: CINEsync.io
+  identity_name: CINEsync.io
   msix_version: 1.0.0.0
   logo_path: D:\cinecync-products\flutter_pos_print\assets\winIcon.png
   capabilities: internetClient,usb,printer,printerSetup,pos
   enable_at_startup: true
   build_windows: false
   output_path: C:\Users\LAYOUTindex Employee\Downloads\output
-  output_name: CineSyncPrinterManager
+  output_name: CINEsync
 
 
 #flutter_launcher_icons:

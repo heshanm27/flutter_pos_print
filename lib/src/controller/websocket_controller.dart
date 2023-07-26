@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_print/src/controller/print_controller.dart';
 import 'package:get/get.dart';
 import 'package:web_socket_channel/io.dart';
 
+import '../misc/app_constants.dart';
 import '../model/websocket_model.dart';
 import '../model/websocket_response_model.dart';
 import 'auth_controller.dart';
@@ -47,15 +49,34 @@ class WebSocketController extends GetxController {
           'WebSocket server is running on port ${server.address.address}${server.port}');
       isConnected.value = true;
       server.listen((request) {
-          if (WebSocketTransformer.isUpgradeRequest(request)) {
-            handleWebSocket(request);
-          }
+        if (WebSocketTransformer.isUpgradeRequest(request)) {
+          handleWebSocket(request);
+        }
       });
       channel =
           IOWebSocketChannel.connect('ws://$ipAddress:${port.toString()}');
     } catch (e) {
+      isConnected.value = false;
       if (e is SocketException) {
-        Get.defaultDialog(title: "Error", middleText: e.message);
+        Get.dialog(AlertDialog(
+          title: const Text(AppConstant.alertTitle),
+          content: const Text(AppConstant.webSocketAlertMessage),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                _webSocketServerUp();
+                Get.back();
+              },
+              child: const Text(AppConstant.webSocketAlertAction),
+            ),
+            TextButton(
+              onPressed: () {
+                Get.back();
+              },
+              child: const Text(AppConstant.webSocketAlertAction2),
+            ),
+          ],
+        ));
       } else {
         debugPrint('Error starting WebSocket server: $e');
       }
@@ -67,14 +88,14 @@ class WebSocketController extends GetxController {
     WebSocketTransformer.upgrade(request).then((WebSocket webSocket) {
       webSocket.listen((data) async {
         try {
-          if(AuthController.checkAuth(request.headers.value('auth')) == true) {
+          if (AuthController.checkAuth(request.headers.value('auth')) == true) {
             WebSocketModel webSocketModel =
-            WebSocketModel.fromJson(jsonDecode(data));
+                WebSocketModel.fromJson(jsonDecode(data));
             WebSocketResponseModel response =
-            await printController.webSocketPrintCommand(webSocketModel);
+                await printController.webSocketPrintCommand(webSocketModel);
             webSocket.add(response.toJson().toString());
-          }else{
-          throw Exception("Authentication Failed");
+          } else {
+            throw Exception("Authentication Failed");
           }
         } catch (e) {
           webSocket.add('Error: $e');
@@ -87,62 +108,7 @@ class WebSocketController extends GetxController {
         print('WebSocket disconnected!');
       });
     }).catchError((error) {
-      
       print('Error upgrading to WebSocket: $error');
     });
   }
-
-// void webSocketConnect(String url,int? timeOut){
-//   debugPrint("Connecting to $url");
-//   isConnecting.value = true;
-//   address.value = url;
-//   if(timeOut != null){
-//     connectionTimeOut.value = timeOut;
-//   }
-//   update();
-//    channel = IOWebSocketChannel.connect(Uri.parse(url),connectTimeout: Duration(seconds: connectionTimeOut.value));
-//
-//   channel.sink.add(
-//     jsonEncode(
-//       {
-//         "type": "subscribe",
-//         "channels": [
-//           {
-//             "name": "ticker",
-//             "product_ids": [
-//               "BTC-EUR",
-//             ]
-//           }
-//         ]
-//       },
-//     ),
-//   );
-//
-//   /// Listen for all incoming data
-//   channel.stream.listen(
-//         (data) {
-//           isConnected.value = true;
-//           isConnecting.value = false;
-//       print(data);
-//     },
-//     onError: (error) {
-//       isConnected.value = false;
-//       isConnecting.value = false;
-//           print(error);},
-//   );
-// }
-
-// void disconnect(){
-//   channel.sink.close(
-//     1000,
-//     "I'm done",
-//   ).then((value) {
-//
-//     isConnected.value = false;
-//
-//     print("Closed");
-//   });
-// }
-
-// Web Socket Server Up In Localhost
 }

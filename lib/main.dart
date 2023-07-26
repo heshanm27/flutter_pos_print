@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_print/src/controller/print_controller.dart';
 import 'package:flutter_print/src/controller/websocket_controller.dart';
+import 'package:flutter_print/src/misc/app_constants.dart';
 import 'package:flutter_print/src/routes/routes.dart';
 import 'package:flutter_window_close/flutter_window_close.dart';
 import 'package:get/get.dart';
@@ -33,7 +34,7 @@ void main() async {
       win.maxSize = initialSize;
       win.size = initialSize;
       win.alignment = Alignment.center;
-      win.title = "CINESync Printer Manager";
+      win.title = AppConstant.appName;
       win.show();
     });
   }
@@ -79,8 +80,8 @@ class _MyAppState extends State<MyApp> {
 
     // We first init the systray menu
     await systemTray.initSystemTray(
-      title: "CINESync Printer Manager",
-      toolTip: "CINESync Printer Manager",
+      title: AppConstant.appName,
+      toolTip: AppConstant.appName,
       iconPath: path,
     );
     // Modified method to handle application exit
@@ -137,7 +138,7 @@ class _MyAppState extends State<MyApp> {
     );
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'CINESync Printer Manager',
+      title: AppConstant.appName,
       theme: ThemeData(
         primarySwatch: customSwatch,
       ),
