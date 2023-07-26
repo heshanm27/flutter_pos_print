@@ -103,6 +103,7 @@ class PrintController extends GetxController {
     subscription = printerManager
         .discovery(type: defaultPrinterType, isBle: isBle.value)
         .listen((device) {
+          debugPrint('device: ${device.operatingSystem}');
       devices.add(PrinterModel(
         deviceName: device.name,
         address: device.address,
@@ -136,6 +137,7 @@ class PrintController extends GetxController {
 
   //map printer to key
   void mapPrinterToKey(String key, PrinterModel printer) {
+   debugPrint("printer state ${printer.state}");
     selectedPrinterMap.add(PrintMapModel(
         mapId: selectedPrinterMap.length,
         key: key,
@@ -145,7 +147,7 @@ class PrintController extends GetxController {
         status: 'Connected'));
     refresh();
     update();
-    // connectMapDeviceTo();
+    connectMapDeviceTo();
   }
 
   //connect printers
@@ -164,8 +166,9 @@ class PrintController extends GetxController {
   }
 
   //connect one printer
-  void connectOneDevice(PrintMapModel element) {
+  void connectOneDevice(PrintMapModel element) async{
     changePrinterStatus(element, 'Connecting');
+    await Future.delayed(const Duration(seconds: 2));
     connectDevice(element.printer!).then((value) {
       if (value == true) {
         element.isConnected = true;
@@ -187,6 +190,7 @@ class PrintController extends GetxController {
         element.status = status;
       }
     }
+    selectedPrinterMap.refresh();
     update();
   }
 

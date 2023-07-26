@@ -79,15 +79,43 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 32,
                       ),
                       Expanded(
-                          child: InfoComponents(
+                          child: Obx(
+                              ()=> InfoComponents(
                         data: [
-                          InfoModel(
-                              title: "Socket Address",
-                              value:
-                                  "ws://${webSocketController.ipAddress}:${webSocketController.port} "),
+                            InfoModel(
+                                title: "Socket Address",
+                                value:
+                                    "ws://${webSocketController.ipAddress}:${webSocketController.port} "),
+                            InfoModel(
+                                title: "Socket Status",
+                                widget: webSocketController.isConnected.value ==
+                                        true
+                                    ? Chip(
+                                        label: Text("Running",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                    color: Colors.green,
+                                                    fontWeight: FontWeight.w500)),
+                                        backgroundColor:
+                                            Colors.green.withOpacity(0.4),
+                                      )
+                                    : Chip(
+                                        label: Text("Disconnected",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                    color: Colors.red,
+                                                    fontWeight: FontWeight.w500)),
+                                        backgroundColor:
+                                            Colors.red.withOpacity(0.4),
+                                      )),
                         ],
                         title: "WEB SOCKET",
-                      )),
+                      ),
+                          )),
                     ],
                   ),
                 ),
@@ -100,9 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       CustomDropButton(
-                          onPressed: () {
-
-                          },
+                          onPressed: () {},
                           icon: "assets/icons/plus.svg",
                           title: "Add Printer"),
                       const SizedBox(
@@ -130,8 +156,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       scrollDirection: Axis.horizontal,
                       child: DataTable(
                           columnSpacing: Platform.isWindows == true
-                              ? 100
-                              : 100 * MediaQuery.of(context).size.width * 0.1,
+                              ? 80
+                              : MediaQuery.of(context).size.width * 0.2,
                           columns: [
                             DataColumn(
                                 label: Text(
@@ -240,24 +266,35 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   onPressed: () {
                                                     showDialog(
                                                       context: context,
-                                                      builder: (BuildContext context) {
+                                                      builder: (BuildContext
+                                                          context) {
                                                         return AlertDialog(
-                                                          title: const Text('Confirmation'),
-                                                          content: const Text('Are you sure you want to delete this config?'),
+                                                          title: const Text(
+                                                              'Confirmation'),
+                                                          content: const Text(
+                                                              'Are you sure you want to delete this config?'),
                                                           actions: <Widget>[
                                                             TextButton(
                                                               onPressed: () {
                                                                 // Perform the action to delete the config
-                                                                printController.removeMapPrinter(e);
-                                                                Navigator.of(context).pop(); // Close the dialog
+                                                                printController
+                                                                    .removeMapPrinter(
+                                                                        e);
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop(); // Close the dialog
                                                               },
-                                                              child: const Text('Yes'),
+                                                              child: const Text(
+                                                                  'Yes'),
                                                             ),
                                                             TextButton(
                                                               onPressed: () {
-                                                                Navigator.of(context).pop(); // Close the dialog
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop(); // Close the dialog
                                                               },
-                                                              child: const Text('No'),
+                                                              child: const Text(
+                                                                  'No'),
                                                             ),
                                                           ],
                                                         );
@@ -297,7 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case "Connected":
         return CustomChip(
           status: status,
-          bgColor: Colors.green.withOpacity(0.5),
+          bgColor: Colors.green,
           iconColor: Colors.green,
         );
       case "Connecting":

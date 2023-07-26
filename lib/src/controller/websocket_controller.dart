@@ -45,6 +45,7 @@ class WebSocketController extends GetxController {
       }
       debugPrint(
           'WebSocket server is running on port ${server.address.address}${server.port}');
+      isConnected.value = true;
       server.listen((request) {
           if (WebSocketTransformer.isUpgradeRequest(request)) {
             handleWebSocket(request);

@@ -33,9 +33,12 @@ class InfoComponents extends StatelessWidget {
                 title: Text(item.title,style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.black.withOpacity(0.6)
                 )),
-                subtitle: Text(item.value,style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500
-              ))
+                subtitle:Align(
+                  alignment: Alignment.centerLeft,
+                  child: item.widget ?? Text(item.value ?? "",style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500
+              )),
+                )
               );
             },
           ),

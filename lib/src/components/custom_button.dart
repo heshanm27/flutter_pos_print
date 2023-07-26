@@ -21,7 +21,6 @@ class CustomButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
         onPressed: onPressed,
-
         style: isOutlined
             ? ButtonStyle(
                 elevation:

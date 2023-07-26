@@ -72,22 +72,23 @@ msix_config:
   publisher_display_name: CineSync
   identity_name: CineSync.io
   msix_version: 1.0.0.0
-  logo_path: D:\cinecync-products\flutter_pos_print\assets\Picture1.png
+  logo_path: D:\cinecync-products\flutter_pos_print\assets\winIcon.png
   capabilities: internetClient,usb,printer,printerSetup,pos
   enable_at_startup: true
-  output_path: C:\Users\LAYOUTindex Employee\Downloads\PrinterInstaller
+  build_windows: false
+  output_path: C:\Users\LAYOUTindex Employee\Downloads\output
   output_name: CineSyncPrinterManager
 
 
-flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "assets/winIcon.png"
-  min_sdk_android: 21 # android min sdk min:16, default 21
-  windows:
-    generate: true
-    image_path: "assets/winIcon.png"
-    icon_size: 48 # min:48, max:256, default: 48
+#flutter_launcher_icons:
+#  android: "launcher_icon"
+#  ios: true
+#  image_path: "assets/winIcon.png"
+#  min_sdk_android: 21 # android min sdk min:16, default 21
+#  windows:
+#    generate: true
+#    image_path: "assets/winIcon.png"
+#    icon_size: 48 # min:48, max:256, default: 48
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
