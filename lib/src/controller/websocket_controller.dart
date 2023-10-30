@@ -14,7 +14,6 @@ import 'auth_controller.dart';
 class WebSocketController extends GetxController {
   final int port = 12864;
   final String ipAddress = "127.0.0.1";
-
   RxBool isConnected = false.obs;
   RxBool isConnecting = false.obs;
   RxString address = "".obs;
@@ -88,15 +87,15 @@ class WebSocketController extends GetxController {
     WebSocketTransformer.upgrade(request).then((WebSocket webSocket) {
       webSocket.listen((data) async {
         try {
-          if (AuthController.checkAuth(request.headers.value('auth')) == true) {
+          // if (AuthController.checkAuth(request.headers.value('auth')) == true) {
             WebSocketModel webSocketModel =
                 WebSocketModel.fromJson(jsonDecode(data));
             WebSocketResponseModel response =
                 await printController.webSocketPrintCommand(webSocketModel);
             webSocket.add(response.toJson().toString());
-          } else {
-            throw Exception("Authentication Failed");
-          }
+          // } else {
+          //   throw Exception("Authentication Failed");
+          // }
         } catch (e) {
           webSocket.add('Error: $e');
         }

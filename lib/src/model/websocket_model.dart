@@ -24,7 +24,7 @@ class WebSocketModel {
 
   factory WebSocketModel.fromJson(Map<String, dynamic> json) => WebSocketModel(
     printerKey: json["printerKey"],
-    data: json["data"],
+    data: json["data"].toString(),
     message: json["message"],
     logo: json["logo"],
     qrUrl: json["qrUrl"],

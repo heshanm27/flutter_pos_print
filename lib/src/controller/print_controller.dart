@@ -8,8 +8,11 @@ import 'package:flutter_pos_printer_platform/esc_pos_utils_platform/src/enums.da
 import 'package:flutter_pos_printer_platform/esc_pos_utils_platform/src/generator.dart';
 import 'package:flutter_pos_printer_platform/esc_pos_utils_platform/src/pos_styles.dart';
 import 'package:flutter_pos_printer_platform/flutter_pos_printer_platform.dart';
+import 'package:flutter_print/src/components/widget/printing_converted.dart';
 import 'package:flutter_print/src/model/printer_model.dart';
 import 'package:get/get.dart';
+import 'package:html/parser.dart' as htmlparser;
+import 'package:html/dom.dart' as dom;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../model/print_data.dart';
 import '../model/printer_map_model.dart';
@@ -17,9 +20,13 @@ import '../model/websocket_model.dart';
 import '../model/websocket_response_model.dart';
 import 'image_controller.dart';
 import 'package:image/image.dart' as img;
+import 'package:simple_html_css/simple_html_css.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:html/parser.dart';
 
 class PrintController extends GetxController {
   var defaultPrinterType = PrinterType.usb;
+  var parsedData = "";
   RxBool isBle = false.obs;
   RxBool reconnect = false.obs;
   var printerManager = PrinterManager.instance;
@@ -103,7 +110,7 @@ class PrintController extends GetxController {
     subscription = printerManager
         .discovery(type: defaultPrinterType, isBle: isBle.value)
         .listen((device) {
-          debugPrint('device: ${device.operatingSystem}');
+      debugPrint('device: ${device.operatingSystem}');
       devices.add(PrinterModel(
         deviceName: device.name,
         address: device.address,
@@ -137,7 +144,7 @@ class PrintController extends GetxController {
 
   //map printer to key
   void mapPrinterToKey(String key, PrinterModel printer) {
-   debugPrint("printer state ${printer.state}");
+    debugPrint("printer state ${printer.state}");
     selectedPrinterMap.add(PrintMapModel(
         mapId: selectedPrinterMap.length,
         key: key,
@@ -166,7 +173,7 @@ class PrintController extends GetxController {
   }
 
   //connect one printer
-  void connectOneDevice(PrintMapModel element) async{
+  void connectOneDevice(PrintMapModel element) async {
     changePrinterStatus(element, 'Connecting');
     await Future.delayed(const Duration(seconds: 2));
     connectDevice(element.printer!).then((value) {
@@ -253,7 +260,6 @@ class PrintController extends GetxController {
     bytes += generator.textLeftRight("Seat No", "D10");
     bytes += generator.textLeftRight("Type ", "Students");
 
-
     bytes += generator.emptyLines(1);
     bytes += generator.qrcode('example.com');
     bytes += generator.hr(ch: '-', len: 32, linesAfter: 1);
@@ -267,6 +273,17 @@ class PrintController extends GetxController {
 
   //print file from template
   Future<PrintData> printFileFromTemplate(WebSocketModel? webData) async {
+    if (webData != null) {
+      var StoreData = webData.data;
+      var convertedStoreData = StoreData.toString();
+      dom.Document document = htmlparser.parse(convertedStoreData);
+      //  print("document ${document}");
+
+      //   var parsedocument = document.outerHtml;
+      parsedData = convertedStoreData;
+      //  print(document.outerHtml);
+      //    PrintingConverter(convertedStoreData: document.outerHtml,);
+    }
     List<int> bytes = [];
     // default profile
     final profile = await CapabilityProfile.load();
@@ -377,8 +394,10 @@ class PrintController extends GetxController {
         return WebSocketResponseModel(
             status: false, message: 'Print data is empty');
       }
+
       printingData = await printFileFromTemplate(data);
     }
+
     if (printingData == null) {
       Get.snackbar('Error', 'Print data is null');
       return WebSocketResponseModel(
@@ -432,7 +451,6 @@ class PrintController extends GetxController {
       WebSocketModel model) async {
     debugPrint('model.printKey: ${model.printerKey}');
     if (model.printerKey != null) {
-
       PrintMapModel? printMapModel = getPrinterByKey(model.printerKey!);
       if (printMapModel != null) {
         return await printCommand(printMapModel, model, false);

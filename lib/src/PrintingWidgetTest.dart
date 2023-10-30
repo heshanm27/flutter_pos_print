@@ -17,14 +17,14 @@ import 'package:html/parser.dart' as htmlparser;
 import 'package:html/dom.dart' as dom;
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class TestPrintScreen extends StatefulWidget {
+  const TestPrintScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<TestPrintScreen> createState() => _TestPrintScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _TestPrintScreenState extends State<TestPrintScreen> {
   PrintController printController = Get.find<PrintController>();
   WebSocketController webSocketController = Get.find<WebSocketController>();
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
