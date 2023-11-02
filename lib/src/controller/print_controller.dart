@@ -13,16 +13,21 @@ import 'package:flutter_print/src/model/printer_model.dart';
 import 'package:get/get.dart';
 import 'package:html/parser.dart' as htmlparser;
 import 'package:html/dom.dart' as dom;
+import 'package:pdf/pdf.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../model/print_data.dart';
 import '../model/printer_map_model.dart';
 import '../model/websocket_model.dart';
 import '../model/websocket_response_model.dart';
 import 'image_controller.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:image/image.dart' as img;
+import 'package:flutter_html/flutter_html.dart';
 import 'package:simple_html_css/simple_html_css.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:html/parser.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:printing/printing.dart';
 
 class PrintController extends GetxController {
   var defaultPrinterType = PrinterType.usb;
@@ -82,7 +87,7 @@ class PrintController extends GetxController {
         }
       }
     });
-    loadCacheFromStorage();
+    // loadCacheFromStorage();
   }
 
   @override
@@ -271,22 +276,15 @@ class PrintController extends GetxController {
     return PrintData(generator, bytes);
   }
 
-  //print file from template
-  Future<PrintData> printFileFromTemplate(WebSocketModel? webData) async {
-    if (webData != null) {
-      var StoreData = webData.data;
-      var convertedStoreData = StoreData.toString();
-      dom.Document document = htmlparser.parse(convertedStoreData);
-      //  print("document ${document}");
+  var convertedStoreData;
 
-      //   var parsedocument = document.outerHtml;
-      parsedData = convertedStoreData;
-      //  print(document.outerHtml);
-      //    PrintingConverter(convertedStoreData: document.outerHtml,);
-    }
+//print file from template
+  Future<PrintData> printFileFromTemplate(WebSocketModel? webData) async {
     List<int> bytes = [];
+    int count = 0;
     // default profile
     final profile = await CapabilityProfile.load();
+    final storedData = webData?.data;
     // PaperSize.mm80 or PaperSize.mm58
 
     PaperSize paperSize;
@@ -299,8 +297,25 @@ class PrintController extends GetxController {
 
     final generator = Generator(
         webData?.paperSize != null ? paperSize : PaperSize.mm80, profile);
+if(webData!= null){
+              print("webData, ${webData?.data}");
+      print("storedData, ${storedData}");
 
-    if (webData?.logo != null) {
+     for (var item in webData.data ?? []) {
+      if(item ){
+        count+=1;
+        print("count, ${count}");
+
+      } 
+      // else if(item?.value?.contentArray){
+      //   print("Item, ${item}");
+
+      //  }
+      
+      }
+
+}
+    if (webData != null) {
       if (webData?.logo?.isNotEmpty == true) {
         final File? imageFile =
             await ImageController.downloadImageAndDisplay(webData!.logo!);
@@ -326,54 +341,58 @@ class PrintController extends GetxController {
           bytes += generator.feed(1);
         }
       }
-    }
 
-    bytes += generator.setStyles(const PosStyles(
-        align: PosAlign.center,
-        height: PosTextSize.size1,
-        width: PosTextSize.size1,
-        bold: true));
-    bytes += generator.text('CineSync',
-        styles: const PosStyles(
-            align: PosAlign.center,
-            bold: true,
-            height: PosTextSize.size2,
-            width: PosTextSize.size2));
-    bytes += generator.text('456 Oak Avenue Somewhereville,Canada.',
-        styles: const PosStyles(align: PosAlign.center));
-    bytes += generator.text('Hotline :',
-        styles: const PosStyles(align: PosAlign.center));
-    bytes += generator.text('info@cinecinema.com',
-        styles: const PosStyles(align: PosAlign.center));
-    bytes += generator.text('https://cinesync-v2-stg.layoutindex.dev',
-        styles: const PosStyles(align: PosAlign.center));
-    bytes += generator.hr(ch: '-', len: 48);
-    bytes += generator.text('Transaction #:2307-1033-5930-5392',
-        styles: const PosStyles(align: PosAlign.center));
-    bytes += generator.hr(ch: '-', len: 48);
-    bytes += generator.text('Elemental',
-        styles: const PosStyles(align: PosAlign.center, bold: true));
-    bytes += generator.emptyLines(1);
-    bytes += generator.textLeftRight("Screen", "Room premium");
-    bytes += generator.textLeftRight("Show Date", "10/07/2023");
-    bytes += generator.textLeftRight("Show Time", "14:01");
-    bytes += generator.textLeftRight("Seat No", "D10");
-    bytes += generator.textLeftRight("Type ", "Students");
-    bytes += generator.emptyLines(1);
+      // for(var item in webData.data) {
 
-    //handle qr code
-    if (webData?.qrUrl != null) {
-      if (webData?.qrUrl?.isNotEmpty == true) {
-        bytes += generator.qrcode(webData!.qrUrl!);
+      // }
+      bytes += generator.setStyles(const PosStyles(
+          align: PosAlign.center,
+          height: PosTextSize.size1,
+          width: PosTextSize.size1,
+          bold: true));
+      bytes += generator.text('CineSync',
+          styles: const PosStyles(
+              align: PosAlign.center,
+              bold: true,
+              height: PosTextSize.size2,
+              width: PosTextSize.size2));
+      bytes += generator.text('456 Oak Avenue Somewhereville,Canada.',
+          styles: const PosStyles(align: PosAlign.center));
+      bytes += generator.text('Hotline :',
+          styles: const PosStyles(align: PosAlign.center));
+      bytes += generator.text('info@cinecinema.com',
+          styles: const PosStyles(align: PosAlign.center));
+      bytes += generator.text('https://cinesync-v2-stg.layoutindex.dev',
+          styles: const PosStyles(align: PosAlign.center));
+      bytes += generator.hr(ch: '-', len: 48);
+      bytes += generator.text('Transaction #:2307-1033-5930-5392',
+          styles: const PosStyles(align: PosAlign.center));
+      bytes += generator.hr(ch: '-', len: 48);
+      bytes += generator.text('Elemental',
+          styles: const PosStyles(align: PosAlign.center, bold: true));
+      bytes += generator.emptyLines(1);
+      bytes += generator.textLeftRight("Screen", "Room premium");
+      bytes += generator.textLeftRight("Show Date", "10/07/2023");
+      bytes += generator.textLeftRight("Show Time", "14:01");
+      bytes += generator.textLeftRight("Seat No", "D10");
+      bytes += generator.textLeftRight("Type ", "Students");
+      bytes += generator.emptyLines(1);
+
+      //handle qr code
+      if (webData?.qrUrl != null) {
+        if (webData?.qrUrl?.isNotEmpty == true) {
+          bytes += generator.qrcode(webData!.qrUrl!);
+        }
       }
+      // bytes += generator.qrcode(base64String,align: PosAlign.center,size: QRSize.Size4);
+      bytes += generator.hr(ch: '-', len: 32, linesAfter: 1);
+      bytes += generator.text('No refund or exchange',
+          styles: const PosStyles(align: PosAlign.center, bold: true));
+      bytes += generator.emptyLines(1);
+      bytes += generator.text('Technology Partner www.cinesync.io',
+          styles: const PosStyles(align: PosAlign.center, bold: true));
     }
-    // bytes += generator.qrcode(base64String,align: PosAlign.center,size: QRSize.Size4);
-    bytes += generator.hr(ch: '-', len: 32, linesAfter: 1);
-    bytes += generator.text('No refund or exchange',
-        styles: const PosStyles(align: PosAlign.center, bold: true));
-    bytes += generator.emptyLines(1);
-    bytes += generator.text('Technology Partner www.cinesync.io',
-        styles: const PosStyles(align: PosAlign.center, bold: true));
+
     return PrintData(generator, bytes);
   }
 
@@ -381,6 +400,7 @@ class PrintController extends GetxController {
   Future<WebSocketResponseModel> printCommand(
       PrintMapModel model, WebSocketModel? data, bool isTest) async {
     PrintData printingData;
+    bool printData;
     changePrinterStatus(model, 'Printing');
     if (model.isConnected == false) {
       Get.snackbar('Error', 'Printer is not connected');
@@ -398,12 +418,12 @@ class PrintController extends GetxController {
       printingData = await printFileFromTemplate(data);
     }
 
-    if (printingData == null) {
-      Get.snackbar('Error', 'Print data is null');
-      return WebSocketResponseModel(
-          status: false, message: 'Print data is null');
-    }
-    await printEscPos(printingData, model.printer!);
+    // if (printData == null) {
+    //   Get.snackbar('Error', 'Print data is null');
+    //   return WebSocketResponseModel(
+    //       status: false, message: 'Print data is null');
+    // }
+    // await printEscPos(printingData, model.printer!);
     changePrinterStatus(model, 'Connected');
     return WebSocketResponseModel(status: true, message: 'Print success');
   }
@@ -449,7 +469,6 @@ class PrintController extends GetxController {
   //print command from websocket
   Future<WebSocketResponseModel> webSocketPrintCommand(
       WebSocketModel model) async {
-    debugPrint('model.printKey: ${model.printerKey}');
     if (model.printerKey != null) {
       PrintMapModel? printMapModel = getPrinterByKey(model.printerKey!);
       if (printMapModel != null) {
@@ -529,45 +548,39 @@ class PrintController extends GetxController {
   }
 
   //save selected printer map to shared preferences
-  Future<void> saveSelectedPrinterMapToSharedPreferences(
-      List<PrintMapModel> data) async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> saveSelectedPrinterMapToSharedPreferences(List<WebSocketModel> data) async {
+  final prefs = await SharedPreferences.getInstance();
+  List<Map<String, dynamic>> list = [];
 
-    List<Map<String, dynamic>> list = [];
-
-    for (var value in data) {
-      list.add(value.toJson());
-    }
-
-    final jsonData = json.encode(list);
-    debugPrint('jsonData: $jsonData');
-    await prefs.setString('selected_printer_map_data', jsonData);
+  for (var value in data) {
+    list.add(value.toJson());
   }
 
-  //get selected printer map from shared preferences
-  Future<List<PrintMapModel>>
-      getSelectedPrinterMapFromSharedPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    //get data from shared preferences
-    final jsonData = prefs.getString('selected_printer_map_data');
-    // debugPrint('jsonData: $jsonData');
+  final jsonData = json.encode(list);
+  debugPrint('jsonData: $jsonData');
+  await prefs.setString('selected_printer_map_data', jsonData);
+}
 
-    if (jsonData != null) {
-      List<dynamic> data = json.decode(jsonData);
-      debugPrint('data: $data');
-      List<PrintMapModel> testMap = [];
-      for (var element in data) {
-        testMap.add(PrintMapModel.fromJson(element));
-      }
-      return testMap;
+Future<List<WebSocketModel>> getSelectedPrinterMapFromSharedPreferences() async {
+  final prefs = await SharedPreferences.getInstance();
+  final jsonData = prefs.getString('selected_printer_map_data');
+  debugPrint('jsonData: $jsonData');
+
+  if (jsonData != null) {
+    List<dynamic> data = json.decode(jsonData);
+    debugPrint('data: $data');
+    List<WebSocketModel> testMap = [];
+    for (var element in data) {
+      testMap.add(WebSocketModel.fromJson(element));
     }
-    return [];
+    return testMap;
   }
-
+  return [];
+}
   //load cache from storage
   Future<void> loadCacheFromStorage() async {
     List<PrintMapModel> cacheList =
-        await getSelectedPrinterMapFromSharedPreferences();
+        (await getSelectedPrinterMapFromSharedPreferences()).cast<PrintMapModel>();
     if (cacheList.isNotEmpty) {
       selectedPrinterMap.value = cacheList;
       selectedPrinterMap.refresh();
@@ -577,3 +590,4 @@ class PrintController extends GetxController {
     connectMapDeviceTo();
   }
 }
+

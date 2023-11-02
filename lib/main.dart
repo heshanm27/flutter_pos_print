@@ -142,7 +142,7 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         primarySwatch: customSwatch,
       ),
-      initialRoute: AppRoutes.print,
+      initialRoute: AppRoutes.home,   //Route changes harida
       getPages: AppRoutes.routes,
     );
   }

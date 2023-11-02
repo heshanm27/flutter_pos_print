@@ -1,12 +1,8 @@
 import 'dart:convert';
 
-WebSocketModel webSocketModelFromJson(String str) => WebSocketModel.fromJson(json.decode(str));
-
-String webSocketModelToJson(WebSocketModel data) => json.encode(data.toJson());
-
 class WebSocketModel {
   String? printerKey;
-  String? data;
+  List<dynamic>? data;
   String? message;
   String? logo;
   String? paperSize;
@@ -18,18 +14,19 @@ class WebSocketModel {
     this.message,
     this.logo,
     this.qrUrl,
-    this.paperSize
-
+    this.paperSize,
   });
 
-  factory WebSocketModel.fromJson(Map<String, dynamic> json) => WebSocketModel(
-    printerKey: json["printerKey"],
-    data: json["data"].toString(),
-    message: json["message"],
-    logo: json["logo"],
-    qrUrl: json["qrUrl"],
-    paperSize: json["paperSize"],
-  );
+  factory WebSocketModel.fromJson(Map<String, dynamic> json) {
+    return WebSocketModel(
+      printerKey: json["printerKey"],
+      data: json["data"] != null ? List<dynamic>.from(json["data"]) : null,
+      message: json["message"],
+      logo: json["logo"],
+      qrUrl: json["qrUrl"],
+      paperSize: json["paperSize"],
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "printerKey": printerKey,

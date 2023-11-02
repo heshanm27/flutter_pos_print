@@ -1,6 +1,7 @@
+import 'package:flutter_print/src/PrintingWidgetTest.dart';
 import 'package:get/get_navigation/src/routes/get_route.dart';
 
- import '../../flutterpritn.dart';
+import '../../flutterpritn.dart';
 import '../HomeScreen.dart';
 
 class AppRoutes {
@@ -9,6 +10,7 @@ class AppRoutes {
   static const String printSetting = '/printSetting';
   static List<GetPage> routes = [
     GetPage(name: home, page: () => const FlutterPRint()),
-    GetPage(name: print, page: () => const HomeScreen()),
+    // GetPage(name: home, page: () => const HomeScreen()),
+    // GetPage(name: print, page: () => const TestPrintScreen()),
   ];
 }

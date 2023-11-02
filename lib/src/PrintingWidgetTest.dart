@@ -48,7 +48,7 @@ class _TestPrintScreenState extends State<TestPrintScreen> {
   @override
   Widget build(BuildContext context) {
   var parsedData = printController.parsedData; 
-    print("print controller ${printController.parsedData}");
+    // print("print controller ${printController.parsedData}");
     return Scaffold(
       body: SafeArea(
         child: SizedBox(
